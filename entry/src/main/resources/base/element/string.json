@@ -1,0 +1,68 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "XinCaiGlass"
+    },
+    {
+      "name": "permission_reason_bluetooth",
+      "value": "You must hae bluetooth permission"
+    },
+    {
+      "name": "hwid_no_internet_connect",
+      "value": "No Internet connection. Check your network settings. "
+    },
+    {
+      "name":"hwid_text_button_known",
+      "value":"OK"
+    },
+    {
+      "name":"teleprompt_files",
+      "value":"Files"
+    },
+    {
+      "name":"teleprompt",
+      "value":"Teleprompt"
+    },
+    {
+      "name":"teleprompt_new",
+      "value":"New"
+    },
+    {
+      "name":"teleprompt_import",
+      "value":"Import"
+    },
+    {
+      "name":"teleprompt_new_untitle",
+      "value":"Untitle"
+    },
+    {
+      "name":"teleprompt_new_enter_text",
+      "value":"Enter text"
+    },
+    {
+      "name":"teleprompt_new_enter_done",
+      "value":"Done"
+    },
+    {
+      "name":"teleprompt_scroll_start",
+      "value":"Start"
+    },
+    {
+      "name": "tets0",
+      "value": "关键术语和概念\n以下是对 BLE 关键术语和概念的总结：\n\n通用属性配置文件 (GATT)\nGATT 配置文件是一种通用规范，内容针对在 BLE 链路上发送和接收称为“属性”的简短数据片段。所有最新的 BLE 应用配置文件都基于 GATT。如需了解详情，请查看 GitHub 上的 Android BluetoothLeGatt 示例。\n配置文件\n蓝牙特别兴趣小组 (Bluetooth SIG) 为 BLE 设备定义了许多配置文件。配置文件是描述设备如何在特定应用中工作的规范。请注意，一台设备可以实现多个配置文件。例如，一台设备可能包含心率监测仪和电池电量检测器。\n属性协议 (ATT)\nGATT 以属性协议 (ATT) 为基础构建而成。二者的关系也被称为 GATT/ATT。ATT 经过优化，可在 BLE 设备上运行。为此，该协议尽可能少地使用字节。每个属性均由通用唯一标识符 (UUID) 进行唯一标识，后者是用于对信息进行唯一标识的字符串 ID 的 128 位标准化格式。ATT 传输的属性采用特征和服务格式。\n特征\n特征包含一个值和 0 至多个描述特征值的描述符。您可将特征理解为类型，后者与类类似。\n描述符\n描述符是描述特征值的已定义属性。例如，描述符可指定人类可读的描述、特征值的可接受范围或特定于特征值的度量单位。\n服务\n服务是一系列特征。例如，您可能有一项名为“心率监测器”的服务，其中包含“心率测量”等特征。您可以在 bluetooth.org 上找到基于 GATT 的现有配置文件和服务的列表。\n角色和职责\n当设备与 BLE 设备交互时，角色和职责会以两种不同的方式划分：\n\n中央与外围。这适用于 BLE 连接本身：担任中央角色的设备进行扫描、寻找广播；外围设备发出广播。如果两个设备都仅支持外围角色，则无法相互通信；如果两个设备都仅支持中央角色，也无法相互通信。\n\nGATT 服务器与 GATT 客户端。这决定两个设备建立连接后如何相互通信。处于客户端角色的设备发送数据请求，处于服务器角色的设备执行这些请求。\n\n如需了解中心-外围设备角色划分与服务器-客户端角色划分的区别，请考虑以下示例：您有一台 Android 手机和一台支持 BLE 的活动追踪器，该追踪器会将传感器数据报告回手机。\n\n手机（中央设备）会主动扫描 BLE 设备。活动追踪器（即外围设备）会进行广告宣传，并等待收到连接请求。\n\n手机与活动追踪器建立连接后，它们便开始相互传送 GATT 元数据。在本例中，手机上运行的应用会发送数据请求，因此它充当 GATT 客户端。活动追踪器会执行这些请求，因此它充当 GATT 服务器。\n\n应用的另一种设计可能使手机扮演 GATT 服务器角色。如需了解详情，请参阅 BluetoothGattServer。\n\n本页面上的内容和代码示例受内容许可部分所述许可的限制。Java 和 OpenJDK 是 Oracle 和/或其关联公司的注册商标。\n\n最后更新时间 (UTC)：2024-11-08。"
+    },
+    {
+      "name":"tets1",
+      "value":"Bluetooth overview\nThe Android platform includes support for the Bluetooth network stack, which allows a device to wirelessly exchange data with other Bluetooth devices. The app framework provides access to the Bluetooth functionality through Bluetooth APIs. These APIs let apps connect to other Bluetooth devices, enabling point-to-point and multipoint wireless features.\n\nUsing the Bluetooth APIs, an app can perform the following:\n\nScan for other Bluetooth devices.\nQuery the local Bluetooth adapter for paired Bluetooth devices.\nEstablish RFCOMM channels.\nConnect to other devices through service discovery.\nTransfer data to and from other devices.\nManage multiple connections.\nThis topic focuses on Classic Bluetooth. Classic Bluetooth is the right choice for more battery-intensive operations, which include streaming and communicating between devices. For Bluetooth devices with low power requirements, consider using Bluetooth Low Energy connections.\n\nThis documentation describes different Bluetooth profiles and explains how to use the Bluetooth APIs to accomplish the four major tasks necessary to communicate using Bluetooth:\n\nSetting up Bluetooth.\nFinding devices that are either paired or available in the local area.\nConnecting devices.\nTransferring data between devices.\nFor a demonstration of using the Bluetooth APIs, see the Bluetooth Chat sample app.\n\nThe basics\nFor Bluetooth-enabled devices to transmit data between each other, they must first form a channel of communication using a pairing process. One device, a discoverable device, makes itself available for incoming connection requests. Another device finds the discoverable device using a service discovery process. After the discoverable device accepts the pairing request, the two devices complete a bonding process in which they exchange security keys. The devices cache these keys for later use. After the pairing and bonding processes are complete, the two devices exchange information. When the session is complete, the device that initiated the pairing request releases the channel that had linked it to the discoverable device. The two devices remain bonded, however, so they can reconnect automatically during a future session as long as they're in range of each other and neither device has removed the bond.\n\nUse of the Bluetooth APIs requires declaring several permissions in your manifest file. Once your app has permission to use Bluetooth, your app needs to access the BluetoothAdapter and determine if Bluetooth is available on the device. If Bluetooth is available, there are three steps to make a connection:\n\nFind nearby Bluetooth devices, either devices that are already paired or new ones.\nConnect to a Bluetooth device.\nTransfer data with the connected device.\nCertain devices use a specific Bluetooth profile that declares the data it provides.\n\nKey classes and interfaces\nAll of the Bluetooth APIs are available in the android.bluetooth package. The following are the classes and interfaces you need in order to create Bluetooth connections:\n\nBluetoothAdapter\nRepresents the local Bluetooth adapter (Bluetooth radio). The BluetoothAdapter is the entry-point for all Bluetooth interaction. Using this, you can discover other Bluetooth devices, query a list of bonded (paired) devices, instantiate a BluetoothDevice using a known MAC address, and create a BluetoothServerSocket to listen for communications from other devices.\nBluetoothDevice\nRepresents a remote Bluetooth device. Use this to request a connection with a remote device through a BluetoothSocket or query information about the device such as its name, address, class, and bonding state.\nBluetoothSocket\nRepresents the interface for a Bluetooth socket (similar to a TCP Socket). This is the connection point that allows an app to exchange data with another Bluetooth device using InputStream and OutputStream.\nBluetoothServerSocket\nRepresents an open server socket that listens for incoming requests (similar to a TCP ServerSocket). In order to connect two devices, one device must open a server socket with this class. When a remote Bluetooth device makes a connection request to this device, the device accepts the connection and then returns a connected BluetoothSocket.\nBluetoothClass\nDescribes the general characteristics and capabilities of a Bluetooth device. This is a read-only set of properties that defines the device's classes and services. Although this information provides a useful hint regarding a device's type, the attributes of this class don't necessarily describe all Bluetooth profiles and services that the device supports.\nBluetoothProfile\nAn interface that represents a Bluetooth profile. A Bluetooth profile is a wireless interface specification for Bluetooth-based communication between devices. An example is the Hands-Free profile. For more discussion of profiles, see Bluetooth profiles.\nBluetoothHeadset\nProvides support for Bluetooth headsets to be used with mobile phones. This includes both the Bluetooth Headset profile and the Hands-Free (v1.5) profile.\nBluetoothA2dp\nDefines how high-quality audio can be streamed from one device to another over a Bluetooth connection using the Advanced Audio Distribution Profile (A2DP).\nBluetoothHealth\nRepresents a Health Device Profile proxy that controls the Bluetooth service.\nBluetoothHealthCallback\nAn abstract class that you use to implement BluetoothHealth callbacks. You must extend this class and implement the callback methods to receive updates about changes in the app’s registration state and Bluetooth channel state.\nBluetoothHealthAppConfiguration\nRepresents an app configuration that the Bluetooth Health third-party app registers to communicate with a remote Bluetooth health device.\nBluetoothProfile.ServiceListener\nAn interface that notifies BluetoothProfile interprocess communication (IPC) clients when they have been connected to or disconnected from the internal service that runs a particular profile."
+    }
+  ]
+}

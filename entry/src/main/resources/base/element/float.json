@@ -1,0 +1,44 @@
+{
+  "float": [
+    {
+      "name": "page_text_font_size",
+      "value": "50fp"
+    },
+    {
+      "name": "page_content_margin",
+      "value": "12vp"
+    },
+    {
+      "name": "product_txt_fontSize",
+      "value": "16vp"
+    },
+    {
+      "name": "price_btn_margin_left",
+      "value": "4vp"
+    },
+    {
+      "name": "common_padding",
+      "value": "12vp"
+    },
+    {
+      "name": "button_radius",
+      "value": "16vp"
+    },
+    {
+      "name": "loading_size",
+      "value": "96vp"
+    },
+    {
+      "name": "product_item_min_height",
+      "value": "56vp"
+    },
+    {
+      "name": "teleprompt_item_title_font_size",
+      "value": "14"
+    },
+    {
+      "name": "teleprompt_item_time_font_size",
+      "value": "10"
+    }
+  ]
+}

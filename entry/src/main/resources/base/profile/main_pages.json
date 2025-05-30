@@ -1,0 +1,10 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/Second",
+    "pages/TelepromptHome",
+    "pages/EditTeleprompt",
+    "pages/TelepromptDetail",
+    "pages/TestTextPage"
+  ]
+}
