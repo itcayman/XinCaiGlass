@@ -1,7 +1,7 @@
 {
   "src": [
     "pages/Index",
-    "pages/Second",
+    "pages/SearchBluetooth",
     "pages/TelepromptHome",
     "pages/EditTeleprompt",
     "pages/TelepromptDetail",

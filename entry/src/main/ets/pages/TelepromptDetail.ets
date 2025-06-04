@@ -1,12 +1,22 @@
 import { App, font, MeasureText, router } from '@kit.ArkUI';
+import gattClientManager, { GattClientManager } from '../core/GattClientManager';
+import {
+  ENTER_TELEPROMPTER_VALUE,
+  COMMAND_SWITCH_PAGE,
+  COMMAND_TELEPROMPT as COMMAND_SCROLL_TELEPROMPTER
+} from '../utils/ProtocolPacket';
 import { TimeUtil } from '../utils/TimeUtil';
 import { CreateTelepromptView } from '../view/CreateTelepromptView';
 import { CustomNavigationBar } from '../view/CustomNavigationBar';
 import { IconButton } from '../view/IconButton';
+import { GlassPacket } from '../viewmodel/GlassPacket';
 import { TelepromptLine } from '../viewmodel/TelepromptILine';
 import { TelepromptData } from '../viewmodel/TelepromptItem';
 
 // import router from '@ohos.router'
+const TAG: string = '[JVC]TelepromptDetail';
+//眼镜上一页对应的行数
+const LINES_PER_PAGE: number = 2;
 
 @Entry
 @Component
@@ -27,7 +37,7 @@ struct TelepromptDetail {
 
   aboutToAppear() {
     this.telepromptData = router.getParams() as TelepromptData
-    for(let i=0;i<23;i++) {
+    for (let i = 0; i < 23; i++) {
       this.telepromptData.content = this.telepromptData.content + '\n'
     }
     console.log('@tc', this.telepromptData.toString())
@@ -37,8 +47,13 @@ struct TelepromptDetail {
       familySrc: '/font/SanJiWenHaoKaiShu-2.ttf' // font文件与pages目录同级
     })
     this.lineHeight = this.getChangeLineHeight(16)
-    console.warn('@tc', 'lineHeight:' + this.lineHeight);
+    console.warn(TAG, '进入提词器详情页, lineHeight:' + this.lineHeight);
     this.lineHeight = 25
+    let data: GlassPacket = {
+      cmd: COMMAND_SWITCH_PAGE, tlvValue: ENTER_TELEPROMPTER_VALUE,
+      valid: true
+    }
+    gattClientManager.writeCharacteristicValue(data)
   }
 
   aboutToDisappear(): void {
@@ -67,11 +82,22 @@ struct TelepromptDetail {
           }
         })
         // this.scrollerForScroll.scrollToIndex()
-        if (this.currentLineIndex == this.contentLines.length - 1) {
+        if (this.currentLineIndex == this.contentLines.length - LINES_PER_PAGE) {
           this.stopAutoScroll()
         }
-        console.log('@tc', '滚动到:' + translationY + ' ' + this.contentLines[this.currentLineIndex].toString())
-      }, 1000)
+
+        console.log(TAG, '滚动到:' + translationY);
+        let sendText = '';
+        let targetIndex = LINES_PER_PAGE + this.currentLineIndex;
+        for (let i = this.currentLineIndex; i < targetIndex && i < this.contentLines.length; i++) {
+          sendText += this.contentLines[i].text + '\n'
+        }
+        let data: GlassPacket = {
+          cmd: COMMAND_SCROLL_TELEPROMPTER, tlvValue: sendText,
+          valid: true
+        }
+        gattClientManager.writeCharacteristicValue(data)
+      }, 5000)
     }
   }
 
@@ -140,7 +166,7 @@ struct TelepromptDetail {
           //遮罩层
           Text()
             .width('100%')
-            .height('85%')
+            .height('88.5%')
             .backgroundColor('#f9f9f9')
             .opacity(0.7)
             .enabled(false)

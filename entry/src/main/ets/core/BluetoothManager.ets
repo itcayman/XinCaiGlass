@@ -1,16 +1,25 @@
 import { access } from "@kit.ConnectivityKit";
+import bleScanManager, { BleScanManager } from "./BleScanManager";
 
 export class BluetoothManager {
   private static instance: BluetoothManager
-  private serviceUUID:string = 'F48A23C0-F69A-11E8-8EB2-F2801F1B9FD1'
-  private characteristic1UUID:string = 'F48A24C1-F69A-11E8-8EB2-F2801F1B9FD1'
-  private characteristic2UUID:string = 'F48A25C2-F69A-11E8-8EB2-F2801F1B9FD1'
+  private serviceUUID: string = 'F48A23C0-F69A-11E8-8EB2-F2801F1B9FD1'
+  private characteristic1UUID: string = 'F48A24C1-F69A-11E8-8EB2-F2801F1B9FD1'
+  private characteristic2UUID: string = 'F48A25C2-F69A-11E8-8EB2-F2801F1B9FD1'
 
   public static getInstance(): BluetoothManager {
     if (!BluetoothManager.instance) {
       BluetoothManager.instance = new BluetoothManager()
     }
     return BluetoothManager.instance
+  }
+
+  public init() {
+    // this.start()
+  }
+
+  public getState(): access.BluetoothState {
+    return access.getState()
   }
 
   public start() {
@@ -42,10 +51,7 @@ export class BluetoothManager {
           btStateMessage += 'unknown status';
           break;
       }
-      if (btStateMessage == 'STATE_ON') {
-        access.off('stateChange');
-      }
-      console.info('bluetooth statues: ' + btStateMessage);
+      console.info('@tc bluetooth statues: ' + btStateMessage);
     })
   }
 }
