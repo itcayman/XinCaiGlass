@@ -4,28 +4,27 @@ import { common } from '@kit.AbilityKit';
 import { CustomNavigationBar } from './CustomNavigationBar';
 
 @Preview
-struct NewTelepromptNavigationBarPreview {
+struct NewTeleprompterNavigationBarPreview {
   build() {
     CustomNavigationBar({ parBGColor: Color.White })
   }
 }
 
 @Component
-export struct NewTelepromptNavigationBar {
+export struct NewTeleprompterNavigationBar {
   @State private statusBarHeight: number = 24 // 默认值(vp)
   @State parBGColor: Color = Color.White
   @LocalStorageProp('isLandScape') isLandScape: boolean = false;
   @LocalStorageProp('isDevice2in1') isDevice2in1: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
+  callback: Callback<void> | undefined;
+  @State private content: string = ''
 
   aboutToAppear() {
     DevicesUtil.getStatusBarHeight(this.context).then(height => {
       this.statusBarHeight = height
     })
   }
-
-  doneEdit: () => void = () => {
-  };
 
   build() {
     Row() {
@@ -72,7 +71,9 @@ export struct NewTelepromptNavigationBar {
           .alignRules({
             right: { anchor: "__container__", align: HorizontalAlign.End }
           })
-          .onClick(this.doneEdit)
+          .onClick(() => {
+            this.callback?.();
+          })
       }.width('25%').alignItems(HorizontalAlign.End)
 
     }

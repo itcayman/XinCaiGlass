@@ -3,16 +3,18 @@ export class BleScanItem {
   public rssi: number = 0;
   public deviceName: string = '';
   public connectable: boolean = false;
+  public connected: boolean = false;
 
-  constructor(deviceId: string, rssi: number, deviceName: string, connectable: boolean) {
+  constructor(deviceId: string, rssi: number, deviceName: string, connectable: boolean, connected: boolean) {
     this.deviceId = deviceId;
     this.rssi = rssi;
     this.deviceName = deviceName;
     this.connectable = connectable;
+    this.connected = connected;
   }
 
   toString(): string {
     return 'deviceName:' + this.deviceName + ', deviceId:' + this.deviceId + ", rssi:" + this.rssi + ', connectable:' +
-    this.connectable
+    this.connectable + ', connected:' + this.connected;
   }
 }

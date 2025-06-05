@@ -8,9 +8,9 @@ import {
   BLE_DEVICE_DISCONNECTING,
   BLE_DEVICE_UNDEFINED
 } from '../utils/EventIds';
-import ProtocolPacket, { ENTER_TELEPROMPTER_VALUE, COMMAND_SWITCH_PAGE } from '../utils/ProtocolPacket';
-import { GlassPacket } from '../viewmodel/GlassPacket';
+import { TransferBLEData } from '../viewmodel/TransferBLEData';
 import { buffer } from '@kit.ArkTS';
+import ProtocolPacket from './ProtocolPacket';
 
 
 const TAG: string = '[JVC]GattClientManager';
@@ -199,7 +199,7 @@ export class GattClientManager {
         }
       });
     } catch (err) {
-      console.error(TAG, 'errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      this.printErr('BLEConnectionStateChange报错', err as BusinessError);
     }
   }
 
@@ -222,7 +222,6 @@ export class GattClientManager {
       return;
     }
     this.gattClient?.on('BLECharacteristicChange', (characteristic: ble.BLECharacteristic) => {
-      console.warn(TAG, '==========================特征值回调');
       if (characteristic.characteristicUuid == this.writeCharacteristicUuid) {
         console.info(TAG, '===============收到写入数据特征值响应');
       }
@@ -242,11 +241,11 @@ export class GattClientManager {
     this.device = peerDevice;
     // 2.1 使用device构造gattClient，后续的交互都需要使用该实例
     this.gattClient = ble.createGattClientDevice(peerDevice);
+    this.onGattClientStateChange(); // 2.2 订阅连接状态
     try {
-      this.onGattClientStateChange(); // 2.2 订阅连接状态
       this.gattClient.connect(); // 2.3 发起连接
     } catch (err) {
-      console.error(TAG, 'errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      this.printErr('建立连接报错', err as BusinessError);
     }
   }
 
@@ -267,7 +266,7 @@ export class GattClientManager {
         // this.writeDescriptorValue();
       });
     } catch (err) {
-      console.error(TAG, 'errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      this.printErr('获取服务报错', err as BusinessError);
     }
   }
 
@@ -307,14 +306,13 @@ export class GattClientManager {
         console.error(TAG, '读取通知数据特征值报错======:' + err.code + ", data:" + err.data);
       })
     } catch (err) {
-      console.error(TAG, '读取通知特征值报错 errCode: ' + (err as BusinessError).code + ', errMessage: ' +
-      (err as BusinessError).message);
+      this.printErr('读取通知特征值报错', err as BusinessError);
     }
   }
 
 
   // 5. 在确保拿到了server端的服务结果后，写入server端特定服务的特征值时调用
-  public writeCharacteristicValue(data: GlassPacket) {
+  public writeCharacteristicValue(data: TransferBLEData) {
     if (!this.gattClient || this.connectState != constant.ProfileConnectionState.STATE_CONNECTED) {
       console.error(TAG, 'no gattClient or not connected');
       return;
@@ -326,20 +324,19 @@ export class GattClientManager {
 
     let writeCharacteristic = this.initWriteCharacteristic();
 
-    let dataPacket: Uint8Array = ProtocolPacket.encode(data)
+    let dataPacket: Uint8Array = ProtocolPacket.createPacket(data)
     writeCharacteristic.characteristicValue = buffer.from(dataPacket).buffer
     console.info(TAG, '开始写入数据:' + ProtocolPacket.toHexString(dataPacket));
     try {
       this.gattClient.writeCharacteristicValue(writeCharacteristic, ble.GattWriteType.WRITE, (err) => {
         if (err) {
-          console.error(TAG,
-            'errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+          this.printErr('写入数据失败1', err as BusinessError);
           return;
         }
         console.info(TAG, '写入数据成功');
       });
     } catch (err) {
-      console.error(TAG, '写入数据失败, errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      this.printErr('写入通知描述符失败2', err as BusinessError);
     }
   }
 
@@ -364,7 +361,7 @@ export class GattClientManager {
         this.logDescriptor(outData);
       });
     } catch (err) {
-      console.error(TAG, 'errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      this.printErr('读取描述符失败', err as BusinessError);
     }
   }
 
@@ -386,16 +383,14 @@ export class GattClientManager {
     try {
       this.gattClient.writeDescriptorValue(descriptor, (err) => {
         if (err) {
-          console.error(TAG,
-            '写入通知描述符失败1: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+          this.printErr('写入通知描述符失败1', err as BusinessError);
           return;
         }
         console.info(TAG, 'writeDescriptorValue success');
         // this.initCharacteristicValue()
       });
     } catch (err) {
-      console.error(TAG,
-        '写入通知描述符失败2: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      this.printErr('写入通知描述符失败2', err as BusinessError);
     }
   }
 
@@ -415,8 +410,12 @@ export class GattClientManager {
       });
       this.gattClient.close() // 8.2 如果不再使用此gattClient，则需要close
     } catch (err) {
-      console.error(TAG, 'errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      this.printErr('断开连接失败', err as BusinessError);
     }
+  }
+
+  private printErr(desc: string, err: BusinessError) {
+    console.error(TAG, desc + ', code:' + err.code + ', message: ' + err.message);
   }
 }
 

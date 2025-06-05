@@ -2,7 +2,7 @@ import { systemShare } from "@kit.ShareKit"
 import { systemDateTime } from "@kit.BasicServicesKit"
 import { TimeUtil } from "../utils/TimeUtil"
 
-export class TelepromptLine {
+export class TeleprompterLine {
   public line: number = 0
   public lineHeight: number = 0
   public startIndex: number = 0

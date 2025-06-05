@@ -1,31 +1,54 @@
 import { ComposeTitleBar, ComposeTitleBarMenuItem, promptAction, router } from '@kit.ArkUI';
 import { CustomNavigationBar } from '../view/CustomNavigationBar';
-import { TelepromptItemView } from '../view/TelepromptItemView';
-import { TelepromptData } from '../viewmodel/TelepromptItem';
-import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
+import { TeleprompterItemView } from '../view/TeleprompterItemView';
+import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
+import { BusinessError, emitter, systemDateTime } from '@kit.BasicServicesKit';
 import { IconButton } from '../view/IconButton';
 import { PermissionUtil } from '../utils/PermissionUtil';
+import { TELEPROMPTER_ADD_SUCCESS } from '../utils/EventIds';
+import { Logger } from '../utils/Logger';
+import databaseManager from '../database/DatabaseManager';
+
+const TAG: string = '[Page][TeleprompterHome]'
 
 @Entry
 @Component
-struct TelepromptHome {
+struct TeleprompterHomePage {
   private context = getContext(this);
   @State title: string = '提词器';
   @State navHeight: number = 0;
-  @State data: Array<TelepromptData> = [
-    new TelepromptData("测试0", this.context.resourceManager.getStringSync($r('app.string.tets0').id), systemDateTime.getTime()),
-    new TelepromptData("测试1",  this.context.resourceManager.getStringSync($r('app.string.tets1').id), systemDateTime.getTime()),
-    new TelepromptData("测试2", "测试内容2", systemDateTime.getTime()),
-    new TelepromptData("测试3", "测试内容3", systemDateTime.getTime()),
-    new TelepromptData("测试4", "测试内容4", systemDateTime.getTime()),
-    new TelepromptData("测试5", "测试内容5", systemDateTime.getTime()),
-    new TelepromptData("测试6", "测试内容6", systemDateTime.getTime()),
-    new TelepromptData("测试7", "测试内容7", systemDateTime.getTime()),
-    new TelepromptData("测试8", "测试内容8", systemDateTime.getTime()),
-    new TelepromptData("测试9", "测试内容9", systemDateTime.getTime()),
-    new TelepromptData("测试10", "测试内容10", systemDateTime.getTime()),
-    new TelepromptData("测试11", "测试内容11", systemDateTime.getTime()),
+  @State data: Array<TeleprompterEntity> = [
+    new TeleprompterEntity(0, "测试内容1", this.context.resourceManager.getStringSync($r('app.string.tets0').id),
+      systemDateTime.getTime()),
+    new TeleprompterEntity(-1, "测试内容2", this.context.resourceManager.getStringSync($r('app.string.tets1').id),
+      systemDateTime.getTime())
   ]
+
+  aboutToAppear(): void {
+    emitter.on({ eventId: TELEPROMPTER_ADD_SUCCESS }, (eventData: emitter.EventData) => {
+      let target: TeleprompterEntity = eventData?.data?.Teleprompter;
+      Logger.debug(TAG, `收到回调 id=${target.id}, title=${target.title}, timestamp=${target.timestamp}`);
+      let filterResult = this.data.filter((item) => {
+        return item.timestamp === target.timestamp;
+      })
+      if (filterResult.length == 0) {
+        Logger.debug(TAG, '列表中没有匹配到数据')
+        this.data.push(target)
+      } else {
+        Logger.debug(TAG, '列表中匹配到数据')
+      }
+    })
+    this.loadDataFromDB()
+  }
+
+  private loadDataFromDB() {
+    databaseManager.getAllTeleprompter((result: Array<TeleprompterEntity>) => {
+      Logger.debug(TAG, `数据库中查询到 ${result.length} 条数据`)
+      if (result.length > 0) {
+        this.data = result;
+      }
+    })
+  }
 
   build() {
     RelativeContainer() {
@@ -54,11 +77,11 @@ struct TelepromptHome {
       })
 
       List({ space: 5, initialIndex: 0 }) {
-        ForEach(this.data, (item: TelepromptData) => {
+        ForEach(this.data, (item: TeleprompterEntity) => {
           ListItem() {
-            TelepromptItemView({ item: item }).margin({ left: 10, right: 10 })
+            TeleprompterItemView({ item: item }).margin({ left: 10, right: 10 })
               .onClick(() => {
-                router.pushUrl({ url: 'pages/TelepromptDetail', params: item })
+                router.pushUrl({ url: 'pages/TeleprompterDetailPage', params: item })
               })
           }
         })
@@ -74,7 +97,7 @@ struct TelepromptHome {
         }).layoutWeight(1)
           .onClick(() => {
             // this.data.push(new TelepromptItem("测试12", "测试内容12", systemDateTime.getTime()))
-            router.pushUrl({ url: 'pages/EditTeleprompt' })
+            router.pushUrl({ url: 'pages/TeleprompterEditPage' })
           })
         IconButton({
           iconRes: $r('app.media.ic_public_download'),

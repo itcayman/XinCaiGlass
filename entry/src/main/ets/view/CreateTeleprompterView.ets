@@ -4,7 +4,10 @@ import { font } from "@kit.ArkUI"
 
 @Preview
 @Component
-export struct CreateTelepromptView {
+export struct CreateTeleprompterView {
+  @Link title: string
+  @Link content: string
+
   aboutToAppear() {
     // familyName和familySrc都支持string
     font.registerFont({
@@ -15,7 +18,7 @@ export struct CreateTelepromptView {
 
   build() {
     Column() {
-      TextArea({ placeholder: $r('app.string.teleprompt_new_untitle') })
+      TextArea({ placeholder: $r('app.string.teleprompt_new_untitle'), text: this.title })
         .lineHeight(20)
         .maxLength(80)
         .placeholderColor('#919191')
@@ -25,12 +28,15 @@ export struct CreateTelepromptView {
         .borderRadius(0)
         .padding(0)
         .backgroundColor(Color.Transparent)
+        .onChange((value: string) => {
+          this.title = value;
+        })
       Text(TimeUtil.formatTimestamp(systemDateTime.getTime()))
         .fontColor('#969696')
         .fontSize(12)
         .height(20)
         .alignSelf(ItemAlign.Start)
-      TextArea({ placeholder: $r('app.string.teleprompt_new_enter_text') })
+      TextArea({ placeholder: $r('app.string.teleprompt_new_enter_text'), text: this.content })
         .layoutWeight(1)
         .placeholderColor('#919191')
         .fontColor('#343434')
@@ -40,6 +46,9 @@ export struct CreateTelepromptView {
         .padding(0)
         .margin({ top: 20 })
         .backgroundColor(Color.Transparent)
+        .onChange((value: string) => {
+          this.content = value;
+        })
     }
     .backgroundColor(Color.White)
     .borderRadius(5)

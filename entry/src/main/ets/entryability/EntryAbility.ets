@@ -28,7 +28,7 @@ export default class EntryAbility extends UIAbility {
     const win = windowStage.getMainWindowSync();
     WindowManager.setSystemBarColor(win);
 
-    windowStage.loadContent('pages/Index', (err) => {
+    windowStage.loadContent('pages/HomePage', (err) => {
     // windowStage.loadContent('pages/TelepromptHome', (err) => {
     // windowStage.loadContent('pages/TestTextPage', (err) => {
       if (err.code) {

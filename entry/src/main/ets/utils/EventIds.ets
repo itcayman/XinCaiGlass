@@ -1,6 +1,8 @@
-export const BLE_SCAN_ID = 1
-export const BLE_DEVICE_CONNECTING = 2
-export const BLE_DEVICE_CONNECTED = 3
-export const BLE_DEVICE_DISCONNECTING = 4
-export const BLE_DEVICE_DISCONNECTED = 5
-export const BLE_DEVICE_UNDEFINED = 6
+export const BLE_SCAN_ID = 0x01
+export const BLE_DEVICE_CONNECTING = 0x02
+export const BLE_DEVICE_CONNECTED = 0x03
+export const BLE_DEVICE_DISCONNECTING = 0x04
+export const BLE_DEVICE_DISCONNECTED = 0x05
+export const BLE_DEVICE_UNDEFINED = 0x06
+
+export const TELEPROMPTER_ADD_SUCCESS = 0x15

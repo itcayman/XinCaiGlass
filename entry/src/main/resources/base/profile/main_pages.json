@@ -1,10 +1,10 @@
 {
   "src": [
-    "pages/Index",
-    "pages/SearchBluetooth",
-    "pages/TelepromptHome",
-    "pages/EditTeleprompt",
-    "pages/TelepromptDetail",
+    "pages/HomePage",
+    "pages/SearchARGlassPage",
+    "pages/TeleprompterHomePage",
+    "pages/TeleprompterEditPage",
+    "pages/TeleprompterDetailPage",
     "pages/TestTextPage"
   ]
 }

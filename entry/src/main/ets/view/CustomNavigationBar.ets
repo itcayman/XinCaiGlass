@@ -6,7 +6,7 @@ import { common } from '@kit.AbilityKit';
 export struct CustomNavigationBar {
   @State private statusBarHeight: number = 24 // 默认值(vp)
   @State private navHeight: number = 44
-  @State parTitle: string = ''
+  @State parTitle: string|Resource = ''
   @State parBGColor: Color = Color.White
   @LocalStorageProp('isLandScape') isLandScape: boolean = false;
   @LocalStorageProp('isDevice2in1') isDevice2in1: boolean = false;

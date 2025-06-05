@@ -53,8 +53,12 @@
       "value":"Done"
     },
     {
-      "name":"teleprompt_scroll_start",
-      "value":"Start"
+      "name": "teleprompt_ai_scroll_start",
+      "value":"Dynamics scroll"
+    },
+    {
+      "name": "teleprompt_auto_scroll_start",
+      "value":"Auto Scroll"
     },
     {
       "name": "tets0",

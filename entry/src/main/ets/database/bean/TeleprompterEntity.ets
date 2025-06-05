@@ -1,8 +1,8 @@
 import { systemShare } from "@kit.ShareKit"
 import { systemDateTime } from "@kit.BasicServicesKit"
-import { TimeUtil } from "../utils/TimeUtil"
+import { TimeUtil } from "../../utils/TimeUtil"
 
-export class TelepromptData {
+export class TeleprompterEntity {
   /**
    * id
    */
@@ -20,7 +20,8 @@ export class TelepromptData {
    */
   public timestamp: number = 0
 
-  constructor(title: string, content: string, timestamp: number) {
+  constructor(id: number, title: string, content: string, timestamp: number) {
+    this.id = id;
     this.title = title
     this.content = content
     this.timestamp = timestamp

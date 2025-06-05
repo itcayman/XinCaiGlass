@@ -50,7 +50,7 @@ export class BleScanManager {
           this.parseScanResult(item.data);
           this.scanResult.set(item.deviceId, item)
 
-          let bleItem:BleScanItem = new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable)
+          let bleItem:BleScanItem = new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, false)
           let eventData: emitter.EventData = { data: { BleScanItem: bleItem } }
           let event: emitter.InnerEvent = { eventId: BLE_SCAN_ID, priority: emitter.EventPriority.HIGH }
           emitter.emit(event, eventData)

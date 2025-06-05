@@ -10,8 +10,8 @@ import gattClientManager from '../core/GattClientManager';
 
 @Entry
 @Component
-struct Second {
-  @State title: string = 'Search Bluetooth';
+struct SearchARGlassPage {
+  @State title: string = 'Search AR Glass';
   @State searchResult: Array<BleScanItem> = new Array
 
   aboutToDisappear(): void {
@@ -32,7 +32,7 @@ struct Second {
         .id('searchButton')
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
-        .margin({top: 20})
+        .margin({ top: 20 })
         .align(Alignment.Center)
         .alignRules({
           top: { anchor: 'navigationBar', align: VerticalAlign.Bottom },
@@ -48,8 +48,16 @@ struct Second {
                 this.searchResult.push(eventData?.data?.BleScanItem)
               })
               emitter.on({ eventId: BLE_DEVICE_CONNECTED }, (eventData: emitter.EventData) => {
+                let deviceId: string = eventData?.data?.deviceId;
+                console.error('[JVC]', '连接到设备:' + deviceId);
                 // this.searchResult.push(eventData?.data?.BleScanItem)
                 // gattClientManager.discoverServices()
+                this.searchResult = this.searchResult.map(item => {
+                  if (item != undefined && item.deviceId == deviceId) {
+                    return new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, true)
+                  }
+                  return item;
+                })
               })
               bleScanManager.stopScan()
               bleScanManager.startScan()
@@ -62,13 +70,23 @@ struct Second {
       List({ space: 20, initialIndex: 0 }) {
         ForEach(this.searchResult, (item: BleScanItem) => {
           ListItem() {
-            Text(item.deviceName)
-              .fontColor($r('app.color.teleprompt_item_title'))
-              .fontSize(18)
-              .fontWeight(FontWeight.Bold)
-              .onClick(()=>{
-                gattClientManager.startConnect(item.deviceId)
-              })
+            if (item.connected) {
+              Text(item.deviceName + ' (已连接)')
+                .fontColor('#FFEF0F0F')
+                .fontSize(18)
+                .fontWeight(FontWeight.Bold)
+                .onClick(() => {
+                  gattClientManager.startConnect(item.deviceId)
+                })
+            } else {
+              Text(item.deviceName)
+                .fontColor($r('app.color.teleprompt_item_title'))
+                .fontSize(18)
+                .fontWeight(FontWeight.Bold)
+                .onClick(() => {
+                  gattClientManager.startConnect(item.deviceId)
+                })
+            }
           }
         })
       }.alignRules({

@@ -1,22 +1,22 @@
 import { TimeUtil } from '../utils/TimeUtil';
 import { systemDateTime } from '@kit.BasicServicesKit';
-import { TelepromptData } from '../viewmodel/TelepromptItem';
+import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
 
 @Preview
 @Component
   //定义组件片段TitlePreview
 struct TelepromptItemWidgetPreview {
   build() {
-    TelepromptItemView({
-      item: new TelepromptData('测试提词器', '测试内容测试内容', systemDateTime.getTime())
+    TeleprompterItemView({
+      item: new TeleprompterEntity(-1, '测试提词器', '测试内容测试内容', systemDateTime.getTime())
     }
     )
   }
 }
 
 @Component
-export struct TelepromptItemView {
-  @State item: TelepromptData = new TelepromptData('','', 0)
+export struct TeleprompterItemView {
+  @State item: TeleprompterEntity = new TeleprompterEntity(0, '','', 0)
 
   build() {
     Row() {

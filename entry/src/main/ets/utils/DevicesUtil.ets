@@ -1,4 +1,3 @@
-
 import window from '@ohos.window';
 import { common } from '@kit.AbilityKit';
 import display from '@ohos.display';
@@ -6,11 +5,15 @@ import deviceInfo from '@ohos.deviceInfo';
 import i18n from '@ohos.i18n';
 
 export class DevicesUtil {
-
   /// 物理像素转虚拟像素
-  private static pxToVp(px: number): number {
+  public static pxToVp(px: number): number {
     const dis = display.getDefaultDisplaySync();
     return px / (dis.densityDPI / 160); // 标准转换公式
+  }
+
+  public static vpToPx(vp:number): number {
+    const dis = display.getDefaultDisplaySync();
+    return vp * dis.densityDPI / 160; // 标准转换公式
   }
 
   /// 同步获取屏幕信息
@@ -19,20 +22,28 @@ export class DevicesUtil {
   }
 
   /// 获取屏幕宽度(vp)
-  static getScreenWidthVP(): number {
+  static getScreenWidth(isVP: boolean = true): number {
     try {
       const displayInfo = display.getDefaultDisplaySync();
-      return DevicesUtil.pxToVp(displayInfo.width);
+      if (isVP) {
+        return DevicesUtil.pxToVp(displayInfo.width);
+      } else {
+        return displayInfo.width;
+      }
     } catch {
       return 360; // 默认宽度(vp)
     }
   }
 
   /// 获取屏幕高度(vp)
-  static getScreenHeightVP(): number {
+  static getScreenHeight(isVP: boolean = true): number {
     try {
       const displayInfo = display.getDefaultDisplaySync();
-      return DevicesUtil.pxToVp(displayInfo.height);
+      if (isVP) {
+        return DevicesUtil.pxToVp(displayInfo.height);
+      } else {
+        return displayInfo.height;
+      }
     } catch {
       return 780; // 默认高度(vp)
     }
@@ -48,7 +59,7 @@ export class DevicesUtil {
       TYPE_NAVIGATION_INDICATOR：获取导航栏区域
       TYPE_CUTOUT：获取刘海屏区域
       */
-      const avoidArea = await win.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      const avoidArea = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
       if (isVP) {
         return DevicesUtil.pxToVp(avoidArea.topRect.height);
       } else {
@@ -64,9 +75,7 @@ export class DevicesUtil {
   static async getNavigationBarHeight(context: common.UIAbilityContext, isVP: boolean = true): Promise<number> {
     try {
       const win = await window.getLastWindow(context);
-      const avoidArea = await win.getWindowAvoidArea(
-        window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR
-      );
+      const avoidArea = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
       if (isVP) {
         return DevicesUtil.pxToVp(avoidArea.bottomRect.height);
       } else {
@@ -83,9 +92,7 @@ export class DevicesUtil {
   static async getCutoutHeight(context: common.UIAbilityContext, isVP: boolean = true): Promise<number> {
     try {
       const win = await window.getLastWindow(context);
-      const avoidArea = await win.getWindowAvoidArea(
-        window.AvoidAreaType.TYPE_CUTOUT
-      );
+      const avoidArea = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_CUTOUT);
       if (isVP) {
         return DevicesUtil.pxToVp(avoidArea.topRect.height);
       } else {
