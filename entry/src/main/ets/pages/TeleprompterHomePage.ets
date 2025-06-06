@@ -8,6 +8,10 @@ import { PermissionUtil } from '../utils/PermissionUtil';
 import { TELEPROMPTER_ADD_SUCCESS } from '../utils/EventIds';
 import { Logger } from '../utils/Logger';
 import databaseManager from '../database/DatabaseManager';
+import { fileIo, picker } from '@kit.CoreFileKit';
+import { fileIo as fs } from '@kit.CoreFileKit';
+import { FileUtil } from '../utils/FileUtil';
+import File from '@system.file';
 
 const TAG: string = '[Page][TeleprompterHome]'
 
@@ -48,6 +52,40 @@ struct TeleprompterHomePage {
         this.data = result;
       }
     })
+  }
+
+  private importTextByFile() {
+    try {
+      let docSelectOptions = new picker.DocumentSelectOptions();
+      // docSelectOptions.fileSuffixFilters = ['.txt', '.doc', '.docx'];
+      docSelectOptions.fileSuffixFilters = ['.txt'];
+      docSelectOptions.maxSelectNumber = 1;
+      let documentPicker = new picker.DocumentViewPicker(this.context);
+      documentPicker.select(docSelectOptions).then((documentSelectResult: Array<string>) => {
+        if (documentSelectResult.length == 0) {
+          return;
+        }
+        //必须要把uri转path才可以读取到文件
+        let uri = FileUtil.getPathFromUri(decodeURI(documentSelectResult[0]));
+        Logger.info(TAG, `DocumentViewPicker successfully, uri: ${uri}`);
+
+        let fileName: string = FileUtil.getFileNameFromUri(uri);
+        fs.readText(uri).then((str: string) => {
+          Logger.warn(TAG, `readText success, title:${fileName}, content: ${str}`);
+          let data = new TeleprompterEntity(0, fileName as string, str, systemDateTime.getTime())
+          router.pushUrl({
+            url: 'pages/TeleprompterEditPage', params: data
+          })
+        }).catch((err: BusinessError) => {
+          Logger.error(TAG, `readText failed, code is: ${err.code}, message is: ${err.message}`);
+        });
+      }).catch((err: BusinessError) => {
+        Logger.error(TAG, `DocumentViewPicker failed1, code is: ${err.code}, message is: ${err.message}`);
+      });
+    } catch (error) {
+      let err: BusinessError = error as BusinessError;
+      Logger.error(TAG, `DocumentViewPicker failed2, code is: ${err.code}, message is: ${err.message}`);
+    }
   }
 
   build() {
@@ -103,6 +141,9 @@ struct TeleprompterHomePage {
           iconRes: $r('app.media.ic_public_download'),
           text: $r('app.string.teleprompt_import')
         }).layoutWeight(1).margin({ right: 20 })
+          .onClick(() => {
+            this.importTextByFile()
+          })
       }
       .id('bottomAction')
       .margin({

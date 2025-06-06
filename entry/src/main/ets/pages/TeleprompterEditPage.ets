@@ -2,11 +2,10 @@ import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
 import databaseManager from '../database/DatabaseManager';
 import { Logger } from '../utils/Logger';
 import { CreateTeleprompterView } from '../view/CreateTeleprompterView';
-import { CustomNavigationBar } from '../view/CustomNavigationBar';
 import { NewTeleprompterNavigationBar } from '../view/NewTeleprompterNavigationBar';
 import { emitter, systemDateTime } from '@kit.BasicServicesKit';
-import { router } from '@kit.ArkUI';
 import { TELEPROMPTER_ADD_SUCCESS } from '../utils/EventIds';
+import { router } from '@kit.ArkUI';
 
 const TAG: string = '[Page][TeleprompterEdit]'
 
@@ -14,16 +13,30 @@ const TAG: string = '[Page][TeleprompterEdit]'
 @Component
 struct TeleprompterEditPage {
   @State title: string = '';
-  @State content: string = ''
+  @State content: string = '';
+  @State timestamp: number = 0;
   private callback: Callback<void> = () => {
     Logger.debug(TAG, 'done click! content:' + this.content)
-    let data = new TeleprompterEntity(0, this.title, this.content, systemDateTime.getTime());
-    databaseManager.insertTeleprompter(data,() => {
+    if (this.timestamp == 0) {
+      this.timestamp = systemDateTime.getTime();
+    }
+    let data = new TeleprompterEntity(0, this.title, this.content, this.timestamp);
+    databaseManager.insertTeleprompter(data, () => {
       Logger.debug(TAG, `成功插入提词器内容, id=${data.id}, title=${data.title}, timestamp=${data.timestamp}`);
       let eventData: emitter.EventData = { data: { Teleprompter: data } }
       emitter.emit({ eventId: TELEPROMPTER_ADD_SUCCESS, priority: emitter.EventPriority.HIGH }, eventData);
       router.back()
     })
+  }
+
+  aboutToAppear(): void {
+    const params = router.getParams() as TeleprompterEntity;
+    if (params === undefined) {
+      return;
+    }
+    this.title = params.title;
+    this.content = params.content;
+    this.timestamp = params.timestamp
   }
 
   build() {

@@ -14,7 +14,11 @@
     },
     {
       "name": "permission_reason_bluetooth",
-      "value": "You must hae bluetooth permission"
+      "value": "You must have bluetooth permission"
+    },
+    {
+      "name": "permission_reason_file",
+      "value": "You must have file permission"
     },
     {
       "name": "hwid_no_internet_connect",
