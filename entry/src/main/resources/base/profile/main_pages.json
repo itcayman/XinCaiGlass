@@ -1,6 +1,6 @@
 {
   "src": [
-    "pages/HomePage",
+    "pages/Index",
     "pages/SearchARGlassPage",
     "pages/TeleprompterHomePage",
     "pages/TeleprompterEditPage",

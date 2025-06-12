@@ -52,7 +52,7 @@ export default class TeleprompterTable {
           const title = resultSet.getString(resultSet.getColumnIndex('TITLE'));
           const content = resultSet.getString(resultSet.getColumnIndex('CONTENT'));
           const timestamp = resultSet.getLong(resultSet.getColumnIndex('TIMESTAMP'));
-          Logger.log(TAG, `id:${id}, title:${title}, content:${content}, timestamp:${timestamp}`);
+          Logger.log(TAG, `id:${id}, title:${title}, timestamp:${timestamp}`);
           result.push(new TeleprompterEntity(id, title, content, timestamp))
         }
         // 释放数据集的内存

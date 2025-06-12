@@ -1,56 +1,68 @@
-import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { AbilityConstant, UIAbility, Configuration, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-import { WindowManager } from '../common/WindowManager ';
-import { BluetoothManager } from '../core/BluetoothManager';
-
-const DOMAIN = 0x0000;
+import cmgManager from '../core/CMGManager';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
-    BluetoothManager.getInstance().init()
+    hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
+    // 缓存当前设备的颜色模式
+    AppStorage.setOrCreate('currentColorMode', this.context.config.colorMode);
+    hilog.info(0x0000, 'testTag', `currentColorMode: ${this.context.config.colorMode}`);
+    cmgManager.init(this.context);
   }
 
   onDestroy(): void {
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
+    hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
+    hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
-    // 调用WindowManager的fullScreen方法设置沉浸式状态
-    WindowManager.fullScreen(windowStage);
 
-    // 获取主窗口并设置系统栏颜色
-    const win = windowStage.getMainWindowSync();
-    WindowManager.setSystemBarColor(win);
-
-    windowStage.loadContent('pages/HomePage', (err) => {
-    // windowStage.loadContent('pages/TelepromptHome', (err) => {
-    // windowStage.loadContent('pages/TestTextPage', (err) => {
+    windowStage.loadContent('pages/Index', (err) => {
+      AppStorage.setOrCreate('uiContext', windowStage.getMainWindowSync().getUIContext());
       if (err.code) {
-        hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
+        hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
         return;
       }
-      hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
+      hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
     });
+  }
+
+  onConfigurationUpdate(newConfig: Configuration): void {
+    AppStorage.setOrCreate('currentColorMode', newConfig.colorMode);
+    hilog.info(0x0000, 'testTag', 'the newConfig.colorMode is %{public}s', JSON.stringify(AppStorage.get('currentColorMode')) ?? '');
   }
 
   onWindowStageDestroy(): void {
     // Main window is destroyed, release UI related resources
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageDestroy');
+    hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageDestroy');
   }
 
   onForeground(): void {
     // Ability has brought to foreground
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onForeground');
+    hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onForeground');
   }
 
   onBackground(): void {
     // Ability has back to background
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onBackground');
+    hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
   }
 }

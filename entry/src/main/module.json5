@@ -50,13 +50,27 @@
     ],
     "requestPermissions": [
       {
-        "name" : "ohos.permission.ACCESS_BLUETOOTH",
+        "name": "ohos.permission.ACCESS_BLUETOOTH",
         "reason": "$string:permission_reason_bluetooth",
         "usedScene": {
           "abilities": [
             "FormAbility"
           ],
-          "when":"inuse"
+          "when": "inuse"
+        }
+      },
+      {
+        "name": "ohos.permission.INTERNET",
+        "reason": "$string:permission_reason_network"
+      },
+      {
+        "name": "ohos.permission.MICROPHONE",
+        "reason": "$string:permission_reason_microphone",
+        "usedScene": {
+          "abilities": [
+            "FormAbility"
+          ],
+          "when": "inuse"
         }
       }
     ]

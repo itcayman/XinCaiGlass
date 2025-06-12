@@ -61,9 +61,7 @@ export default class Rdb {
     }
     let resFlag: boolean = false;
     const valueBucket: relationalStore.ValuesBucket = data;
-    Logger.info(TAG, 'insertData() 1');
     if (this.rdbStore) {
-      Logger.info(TAG, 'insertData() 2');
       this.rdbStore.insert(this.tableName, valueBucket, (err, ret) => {
         if (err) {
           Logger.error(TAG, `insertData() failed, err: ${err}`);

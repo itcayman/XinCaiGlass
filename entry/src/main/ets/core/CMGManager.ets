@@ -1,0 +1,58 @@
+import { CMGDeviceInfo } from "../viewmodel/CMGDeviceInfo";
+import { LocalDataManager } from "./LocalDataManager";
+import { bundleManager, Context } from "@kit.AbilityKit";
+import { bluetoothManager } from "@kit.MDMKit";
+import { BluetoothManager } from "./BluetoothManager";
+import { isBlank } from "../utils/StringUtil";
+import { emitter } from "@kit.BasicServicesKit";
+import { BLE_SCAN_ID } from "../utils/EventIds";
+import { BleScanItem } from "../viewmodel/BleScanItem";
+import databaseManager from "../database/DatabaseManager";
+
+const DEVICE_NAME_FILTER = 'CMG_Y01_0001'
+
+export class CMGManager {
+  private glassDevice: CMGDeviceInfo = new CMGDeviceInfo();
+  private localData: LocalDataManager = new LocalDataManager();
+  private bluetooth: BluetoothManager = new BluetoothManager();
+
+  init(context: Context) {
+    this.localData.init(context);
+    this.bluetooth.init();
+
+    this.initMac();
+    this.initSoftwareInfo();
+  }
+
+  public bluetoothM(): BluetoothManager {
+    return this.bluetooth;
+  }
+
+  public findDevice() {
+    emitter.on({ eventId: BLE_SCAN_ID }, (eventData: emitter.EventData) => {
+      let findDevice: BleScanItem = eventData?.data?.BleScanItem;
+      if (findDevice.deviceName.startsWith(DEVICE_NAME_FILTER)) {
+
+      }
+    })
+    this.bluetooth.startBLEScan();
+  }
+
+  private initMac() {
+    this.glassDevice.mac = this.localData.getMac();
+    // 本地没有存设备信息，则需要本地自动连接最近的CMG设备
+    if (isBlank(this.glassDevice.mac)) {
+
+    }
+  }
+
+  private initSoftwareInfo() {
+    bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
+      this.glassDevice.softwareVersion = bundleInfo.versionName;
+    })
+  }
+}
+
+let cmgManager = new CMGManager();
+
+export default cmgManager as CMGManager;

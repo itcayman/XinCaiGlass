@@ -6,6 +6,7 @@
   "author": "",
   "license": "",
   "dependencies": {
+    "@ohos/lottie": "^2.0.0"
   }
 }
 

@@ -13,12 +13,28 @@
       "value": "XinCaiGlass"
     },
     {
+      "name": "tab_bar_option_one",
+      "value": "Home"
+    },
+    {
+      "name": "tab_bar_option_two",
+      "value": "CMG AI"
+    },
+    {
+      "name": "tab_bar_option_three",
+      "value": "Mine"
+    },
+    {
       "name": "permission_reason_bluetooth",
       "value": "You must have bluetooth permission"
     },
     {
-      "name": "permission_reason_file",
-      "value": "You must have file permission"
+      "name": "permission_reason_network",
+      "value": "You must have network permission"
+    },
+    {
+      "name": "permission_reason_microphone",
+      "value": "You must have microphone permission"
     },
     {
       "name": "hwid_no_internet_connect",
@@ -33,8 +49,28 @@
       "value":"Files"
     },
     {
-      "name":"teleprompt",
+      "name": "teleprompter",
       "value":"Teleprompt"
+    },
+    {
+      "name": "teleprompter_desc",
+      "value":"Intellisense"
+    },
+    {
+      "name": "meeting_assistant",
+      "value":"Meeting Assistant"
+    },
+    {
+      "name": "meeting_assistant_desc",
+      "value":"Remote Assistance"
+    },
+    {
+      "name": "smart_reminder",
+      "value":"Smart Reminder"
+    },
+    {
+      "name": "smart_reminder_desc",
+      "value":"0 Unread"
     },
     {
       "name":"teleprompt_new",
@@ -57,12 +93,16 @@
       "value":"Done"
     },
     {
-      "name": "teleprompt_ai_scroll_start",
-      "value":"Dynamics scroll"
+      "name": "teleprompter_dynamic_scroll",
+      "value":"Dynamic scroll"
     },
     {
-      "name": "teleprompt_auto_scroll_start",
-      "value":"Auto Scroll"
+      "name": "teleprompter_speed_scroll",
+      "value":"Speed Scroll"
+    },
+    {
+      "name": "teleprompter_stop_scroll",
+      "value":"Stop Scroll"
     },
     {
       "name": "tets0",
@@ -71,6 +111,26 @@
     {
       "name":"tets1",
       "value":"Bluetooth overview\nThe Android platform includes support for the Bluetooth network stack, which allows a device to wirelessly exchange data with other Bluetooth devices. The app framework provides access to the Bluetooth functionality through Bluetooth APIs. These APIs let apps connect to other Bluetooth devices, enabling point-to-point and multipoint wireless features.\n\nUsing the Bluetooth APIs, an app can perform the following:\n\nScan for other Bluetooth devices.\nQuery the local Bluetooth adapter for paired Bluetooth devices.\nEstablish RFCOMM channels.\nConnect to other devices through service discovery.\nTransfer data to and from other devices.\nManage multiple connections.\nThis topic focuses on Classic Bluetooth. Classic Bluetooth is the right choice for more battery-intensive operations, which include streaming and communicating between devices. For Bluetooth devices with low power requirements, consider using Bluetooth Low Energy connections.\n\nThis documentation describes different Bluetooth profiles and explains how to use the Bluetooth APIs to accomplish the four major tasks necessary to communicate using Bluetooth:\n\nSetting up Bluetooth.\nFinding devices that are either paired or available in the local area.\nConnecting devices.\nTransferring data between devices.\nFor a demonstration of using the Bluetooth APIs, see the Bluetooth Chat sample app.\n\nThe basics\nFor Bluetooth-enabled devices to transmit data between each other, they must first form a channel of communication using a pairing process. One device, a discoverable device, makes itself available for incoming connection requests. Another device finds the discoverable device using a service discovery process. After the discoverable device accepts the pairing request, the two devices complete a bonding process in which they exchange security keys. The devices cache these keys for later use. After the pairing and bonding processes are complete, the two devices exchange information. When the session is complete, the device that initiated the pairing request releases the channel that had linked it to the discoverable device. The two devices remain bonded, however, so they can reconnect automatically during a future session as long as they're in range of each other and neither device has removed the bond.\n\nUse of the Bluetooth APIs requires declaring several permissions in your manifest file. Once your app has permission to use Bluetooth, your app needs to access the BluetoothAdapter and determine if Bluetooth is available on the device. If Bluetooth is available, there are three steps to make a connection:\n\nFind nearby Bluetooth devices, either devices that are already paired or new ones.\nConnect to a Bluetooth device.\nTransfer data with the connected device.\nCertain devices use a specific Bluetooth profile that declares the data it provides.\n\nKey classes and interfaces\nAll of the Bluetooth APIs are available in the android.bluetooth package. The following are the classes and interfaces you need in order to create Bluetooth connections:\n\nBluetoothAdapter\nRepresents the local Bluetooth adapter (Bluetooth radio). The BluetoothAdapter is the entry-point for all Bluetooth interaction. Using this, you can discover other Bluetooth devices, query a list of bonded (paired) devices, instantiate a BluetoothDevice using a known MAC address, and create a BluetoothServerSocket to listen for communications from other devices.\nBluetoothDevice\nRepresents a remote Bluetooth device. Use this to request a connection with a remote device through a BluetoothSocket or query information about the device such as its name, address, class, and bonding state.\nBluetoothSocket\nRepresents the interface for a Bluetooth socket (similar to a TCP Socket). This is the connection point that allows an app to exchange data with another Bluetooth device using InputStream and OutputStream.\nBluetoothServerSocket\nRepresents an open server socket that listens for incoming requests (similar to a TCP ServerSocket). In order to connect two devices, one device must open a server socket with this class. When a remote Bluetooth device makes a connection request to this device, the device accepts the connection and then returns a connected BluetoothSocket.\nBluetoothClass\nDescribes the general characteristics and capabilities of a Bluetooth device. This is a read-only set of properties that defines the device's classes and services. Although this information provides a useful hint regarding a device's type, the attributes of this class don't necessarily describe all Bluetooth profiles and services that the device supports.\nBluetoothProfile\nAn interface that represents a Bluetooth profile. A Bluetooth profile is a wireless interface specification for Bluetooth-based communication between devices. An example is the Hands-Free profile. For more discussion of profiles, see Bluetooth profiles.\nBluetoothHeadset\nProvides support for Bluetooth headsets to be used with mobile phones. This includes both the Bluetooth Headset profile and the Hands-Free (v1.5) profile.\nBluetoothA2dp\nDefines how high-quality audio can be streamed from one device to another over a Bluetooth connection using the Advanced Audio Distribution Profile (A2DP).\nBluetoothHealth\nRepresents a Health Device Profile proxy that controls the Bluetooth service.\nBluetoothHealthCallback\nAn abstract class that you use to implement BluetoothHealth callbacks. You must extend this class and implement the callback methods to receive updates about changes in the app’s registration state and Bluetooth channel state.\nBluetoothHealthAppConfiguration\nRepresents an app configuration that the Bluetooth Health third-party app registers to communicate with a remote Bluetooth health device.\nBluetoothProfile.ServiceListener\nAn interface that notifies BluetoothProfile interprocess communication (IPC) clients when they have been connected to or disconnected from the internal service that runs a particular profile."
+    },
+    {
+      "name": "tips_stop_dynamic_scroll",
+      "value":"Please stop dynamic scroll!"
+    },
+    {
+      "name": "tips_stop_speed_scroll",
+      "value":"Please stop speed scroll!"
+    },
+    {
+      "name": "blank_view_text",
+      "value": "No data available at the moment"
+    },
+    {
+      "name": "interpreter",
+      "value": "Interpreter"
+    },
+    {
+      "name": "interpreter_desc",
+      "value": "Realtime Translate"
     }
   ]
 }

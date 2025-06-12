@@ -124,4 +124,53 @@ export class ByteUtil {
   static byteToShortBig(b: Uint8Array): number {
     return (((b[0] << 8) | b[1] & 0xff));
   }
+
+  /**
+   * 将ArrayBuffer编码为Base64字符串，不使用换行符(NO_WRAP)
+   * 完全仿照Java的Base64.encodeToString(chunk, Base64.NO_WRAP)
+   * @param buffer - 要编码的ArrayBuffer
+   * @returns 编码后的Base64字符串(不带换行符)
+   */
+  static base64EncodeToStringNoWrap(buffer: ArrayBuffer): string {
+    if (buffer === null || buffer === undefined) {
+      throw new TypeError("Cannot read property 'byteLength' of null");
+    }
+
+    // 处理空输入
+    if (buffer.byteLength === 0) {
+      return "";
+    }
+
+    const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const bytes = new Uint8Array(buffer);
+    let result = "";
+    let padding = 0;
+
+    for (let i = 0; i < bytes.length; i += 3) {
+      // 读取3个字节
+      const byte1 = bytes[i];
+      const byte2 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+      const byte3 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+
+      // 计算填充字节数
+      if (i + 1 >= bytes.length) padding = 2;
+      else if (i + 2 >= bytes.length) padding = 1;
+
+      // 转换为4个Base64字符
+      const b64_1 = (byte1 & 0xfc) >> 2;
+      const b64_2 = ((byte1 & 0x03) << 4) | ((byte2 & 0xf0) >> 4);
+      const b64_3 = ((byte2 & 0x0f) << 2) | ((byte3 & 0xc0) >> 6);
+      const b64_4 = byte3 & 0x3f;
+
+      // 添加到结果字符串
+      result += base64Chars.charAt(b64_1);
+      result += base64Chars.charAt(b64_2);
+
+      // 处理填充
+      result += padding > 1 ? '=' : base64Chars.charAt(b64_3);
+      result += padding > 0 ? '=' : base64Chars.charAt(b64_4);
+    }
+
+    return result;
+  }
 }

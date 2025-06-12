@@ -71,21 +71,31 @@ struct SearchARGlassPage {
         ForEach(this.searchResult, (item: BleScanItem) => {
           ListItem() {
             if (item.connected) {
-              Text(item.deviceName + ' (已连接)')
-                .fontColor('#FFEF0F0F')
-                .fontSize(18)
-                .fontWeight(FontWeight.Bold)
-                .onClick(() => {
-                  gattClientManager.startConnect(item.deviceId)
-                })
+              Column() {
+                Text(item.deviceName + ' (已连接)')
+                  .fontColor('#FFEF0F0F')
+                  .fontSize(18)
+                  .fontWeight(FontWeight.Bold)
+                  .onClick(() => {
+                    gattClientManager.startConnect(item.deviceId)
+                  })
+                Text(item.deviceId)
+                  .margin({left: 20})
+                  .fontColor('#cccccc')
+              }
             } else {
-              Text(item.deviceName)
-                .fontColor($r('app.color.teleprompt_item_title'))
-                .fontSize(18)
-                .fontWeight(FontWeight.Bold)
-                .onClick(() => {
-                  gattClientManager.startConnect(item.deviceId)
-                })
+              Column() {
+                Text(item.deviceName)
+                  .fontColor($r('app.color.teleprompt_item_title'))
+                  .fontSize(18)
+                  .fontWeight(FontWeight.Bold)
+                  .onClick(() => {
+                    gattClientManager.startConnect(item.deviceId)
+                  })
+                Text(item.deviceId)
+                  .margin({left: 20})
+                  .fontColor('#cccccc')
+              }
             }
           }
         })
