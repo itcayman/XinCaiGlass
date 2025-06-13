@@ -5,6 +5,7 @@ import deviceInfo from '@ohos.deviceInfo';
 import i18n from '@ohos.i18n';
 
 export class DevicesUtil {
+  static statusBarHeight = 0
   /// 物理像素转虚拟像素
   public static pxToVp(px: number): number {
     const dis = display.getDefaultDisplaySync();

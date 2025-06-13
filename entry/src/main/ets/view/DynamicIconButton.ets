@@ -1,6 +1,6 @@
 @Preview
 struct DynamicIconButtonPreview {
-  @State iconRes: Resource = $r('app.media.ic_public_download');
+  @State iconRes: Resource = $r("app.media.ic_teleprompter_import");
   @State text: string = 'Nex'
 
   build() {

@@ -4,6 +4,7 @@ import { WebsocketManager, WebSocketMessageType } from "./WebsocketManager";
 import { common } from "@kit.AbilityKit";
 import { ByteUtil } from "../utils/ByteUtil";
 import fs, { Options, WriteOptions } from '@ohos.file.fs';
+import { isBlank } from "../utils/StringUtil";
 
 interface Transcription {
   model: string
@@ -53,7 +54,9 @@ export class RealtimeAsrClient {
   private websocketManager = new WebsocketManager()
   private audioProcessor = new AudioProcessor(this.context)
   private sessionChecked = false
+  private lastResultText = ''
   private onConnectSuccessCallback: (() => void) | null = null;
+  private onTranscriptionCallback: ((result: string) => void) | null = null;
 
   constructor() {
     this.initAudioProcessor();
@@ -77,12 +80,20 @@ export class RealtimeAsrClient {
     this.onConnectSuccessCallback = callback;
   }
 
+  public setTranscriptionCallback(callback: (result: string) => void) {
+    this.onTranscriptionCallback = callback;
+  }
+
   public connect() {
     this.websocketManager.connect('wss://ai-gateway.vei.volces.com/v1/realtime?model=bigmodel');
   }
 
   public startAudioCapture() {
     this.audioProcessor.startAudioCapture();
+  }
+
+  public stopAudioCapture() {
+    this.audioProcessor.stopAudioCapture();
   }
 
   public complete() {
@@ -108,8 +119,29 @@ export class RealtimeAsrClient {
         this.onConnectSuccessCallback?.();
         break;
       case 'conversation.item.input_audio_transcription.result':
-        let audioResult = result as AudioTranscriptionResult;
-        Logger.debug(TAG, `服务端语音识别结果：transcript:${audioResult.transcript}`)
+        let transcriptionResult = (result as AudioTranscriptionResult).transcript;
+        // Logger.debug(TAG, `服务端语音识别结果: ${transcriptionResult}`)
+        if (isBlank(transcriptionResult)) {
+          return;
+        }
+        transcriptionResult = transcriptionResult.replaceAll(RegExp("[,，.。！]", "g"),'|')
+        // Logger.debug(TAG, `转化后结果: ${transcriptionResult}`)
+        let text = transcriptionResult;
+        if (transcriptionResult.indexOf('|') >= 0) {
+          let splits = transcriptionResult.split('|');
+          // Logger.debug(TAG, `splits length:${splits.length},splits: ${splits}`);
+          text = splits[Math.max(splits.length - 1, 0)];
+          // Logger.debug(TAG, `text: ${text}`);
+        }
+        if (text == 'undefined' || isBlank(text)) {
+          return;
+        }
+        if (this.lastResultText == text) {
+          return;
+        }
+        this.lastResultText = text;
+        Logger.debug(TAG, `最终识别结果:${text}`)
+        this.onTranscriptionCallback?.(text);
         break;
       case 'conversation.item.input_audio_transcription.completed':
         Logger.debug(TAG, `服务端确认完成此次语音识别`)
@@ -120,18 +152,20 @@ export class RealtimeAsrClient {
   private initAudioProcessor() {
     this.audioProcessor.setAudioParams();
 
+    let audioBuffer:ArrayBuffer = new ArrayBuffer(1280* 10);
     let bufferSize: number = 0;
     let path = getContext().cacheDir;
     let filePath = path + '/StarWars10s-2C-48000-4SW.pcm';
     let file: fs.File = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     this.audioProcessor.setPcmDataCallback((buffer: ArrayBuffer, size: number) => {
       // Logger.debug(TAG, `采集到音频数据，size:${size}`)
-      let options: WriteOptions = {
-        offset: bufferSize,
-        length: buffer.byteLength
-      }
-      fs.writeSync(file.fd, buffer, options);
-      bufferSize += buffer.byteLength;
+      // let options: WriteOptions = {
+      //   offset: bufferSize,
+      //   length: buffer.byteLength
+      // }
+      // fs.writeSync(file.fd, buffer, options);
+      // bufferSize += buffer.byteLength;
+
       this.sendAudioData(buffer);
     })
   }
@@ -165,6 +199,7 @@ export class RealtimeAsrClient {
     };
     this.websocketManager.sendTextMessage(JSON.stringify(audioData));
   }
+
 }
 
 let realtimeAsrManager = new RealtimeAsrClient();

@@ -54,7 +54,7 @@ class CommandManager {
   }
 
   private static enterPage(tlvValue: Uint8Array) {
-    let data: TransferBLEData = new TransferBLEData(COMMAND_SET_DATETIME, tlvValue, '');
+    let data: TransferBLEData = new TransferBLEData(COMMAND_SWITCH_PAGE, tlvValue, '', false);
     gattClientManager.writeCharacteristicValue(data)
   }
 }

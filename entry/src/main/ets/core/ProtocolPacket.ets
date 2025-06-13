@@ -21,9 +21,26 @@ class ProtocolPacket {
   public static createPacket(data: TransferBLEData) {
     if (typeof data.tlvValue === 'string') {
       return ProtocolPacket.createTextPacket(data.cmd, data.tlvValue)
+    } else if (!data.wrapperData) {
+      return ProtocolPacket.createUintArrayPacketNoWrapper(data.cmd, FIXED_TLV_TYPE, data.tlvValue);
     } else {
       return ProtocolPacket.createUintArrayPacket(data.cmd, data.tlvType, data.tlvValue);
     }
+  }
+
+  private static createUintArrayPacketNoWrapper(cmd: number, tlvType: number = FIXED_TLV_TYPE,
+    tlvValue: Uint8Array): Uint8Array {
+    const tlvLen = buffer.alloc(2);
+    tlvLen.writeInt16LE(tlvValue?.length, 0);
+    // 创建第二层数据包
+    const packet = buffer.concat([
+      buffer.from([PROTOCOL_HEADER]),
+      buffer.from([cmd]),
+      buffer.from([tlvType]),
+      tlvLen,
+      buffer.from(tlvValue)
+    ]);
+    return new Uint8Array(packet.buffer);
   }
 
   private static wrapperPacket(cmd: number, tlvValue: Uint8Array | ArrayBuffer): Uint8Array {

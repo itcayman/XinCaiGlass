@@ -1,10 +1,9 @@
-import { App, font, MeasureText, router } from '@kit.ArkUI';
+import { App, font, MeasureText, MeasureUtils, router } from '@kit.ArkUI';
 import CommandManager from '../core/CommandManager';
 import { DevicesUtil } from '../utils/DevicesUtil';
 import { TimeUtil } from '../utils/TimeUtil';
 import { ViewUtil } from '../utils/ViewUtil';
 import { CustomNavigationBar } from '../view/CustomNavigationBar';
-import { IconButton } from '../view/IconButton';
 import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
 import { TeleprompterLine } from '../viewmodel/TeleprompterLine';
 import { common } from '@kit.AbilityKit';
@@ -12,15 +11,17 @@ import { PermissionUtil } from '../utils/PermissionUtil';
 import realtimeAsrManager from '../core/RealtimeAsrClient';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { Logger } from '../utils/Logger';
-import { notificationManager } from '@kit.NotificationKit';
-import notification from '@ohos.notification';
 import { JhProgressHUD } from '../utils/JhProgressHUD';
 import { DynamicIconButton } from '../view/DynamicIconButton';
 
+import measure from '@ohos.measure'
+import { isBlank } from '../utils/StringUtil';
+
 // import router from '@ohos.router'
-const TAG: string = '[JVC]TeleprompterDetail';
+const TAG: string = '[TeleprompterDetail]';
 //眼镜上一页对应的行数
 const LINES_PER_PAGE: number = 4;
+const LINE_HEIGHT = 25
 
 @Entry
 @Component
@@ -41,8 +42,6 @@ struct TeleprompterDetailPage {
   private contentController: TextController = new TextController();
   @State navHeight: number = 0;
   @State teleprompterData: TeleprompterEntity = new TeleprompterEntity(0, '', '', 0)
-  //每行文字的高度
-  @State private lineHeight: number = 0
   //当前所在行数索引
   @State private currentLineIndex: number = 0
   private timer: number | null = null
@@ -50,14 +49,13 @@ struct TeleprompterDetailPage {
 
   aboutToAppear() {
     this.teleprompterData = router.getParams() as TeleprompterEntity
-    console.log('@tc', this.teleprompterData.toString())
+    Logger.log(TAG, this.teleprompterData.toString())
 
     font.registerFont({
       familyName: 'kaishu',
       familySrc: '/font/SanJiWenHaoKaiShu-2.ttf' // font文件与pages目录同级
     })
-    this.lineHeight = Number(this.getChangeLineHeight(16).height);
-    console.warn(TAG, '进入提词器详情页, lineHeight:' + this.lineHeight);
+    Logger.warn(TAG, '进入提词器详情页');
     CommandManager.enterTeleprompterPage()
   }
 
@@ -67,8 +65,11 @@ struct TeleprompterDetailPage {
   }
 
   private initRealtimeASR() {
-    realtimeAsrManager.setConnectSuccessCallback(()=>{
+    realtimeAsrManager.setConnectSuccessCallback(() => {
       realtimeAsrManager.startAudioCapture();
+    })
+    realtimeAsrManager.setTranscriptionCallback((result) => {
+      this.afterGetTranscriptResult(result);
     })
     PermissionUtil.init(getContext(this))
       .addPermissions('ohos.permission.MICROPHONE')
@@ -84,16 +85,6 @@ struct TeleprompterDetailPage {
       })
   }
 
-  private getChangeLineHeight(size: number): SizeOptions {
-    let sizeOption: SizeOptions =
-      MeasureText.measureTextSize({ textContent: 'Hello world!', fontSize: size, fontFamily: 'kaishu' })
-    return sizeOption
-  }
-
-  private calculateMaskLayerHeight() {
-
-  }
-
   // 开始动态滚动控制
   private startDynamicScroll() {
     this.isDynamicScrolling = true;
@@ -106,6 +97,7 @@ struct TeleprompterDetailPage {
     this.btnDynamicScrollIcon = $r('app.media.ic_mic_on');
     this.btnDynamicScrollText = $r('app.string.teleprompter_dynamic_scroll');
     if (realtimeAsrManager.isRecordingAudio()) {
+      realtimeAsrManager.stopAudioCapture();
       realtimeAsrManager.complete();
     }
     realtimeAsrManager.reset();
@@ -119,7 +111,7 @@ struct TeleprompterDetailPage {
       this.btnSpeedScrollIcon = $r('app.media.ic_public_pause_norm')
       this.btnSpeedScrollText = $r("app.string.teleprompter_stop_scroll")
       this.timer = setInterval(() => {
-        this.innerScroll()
+        this.innerScrollLine(this.currentLineIndex + LINES_PER_PAGE)
       }, 5000)
     }
   }
@@ -136,23 +128,26 @@ struct TeleprompterDetailPage {
     }
   }
 
-  private innerScroll() {
-    this.currentLineIndex += LINES_PER_PAGE
-    console.log('@tc', '计算行高')
-    // let translationY = this.lineHeight * this.currentLineIndex
-    let translationY = 25 * this.currentLineIndex
+  private innerScrollLine(lineNum: number) {
+    this.currentLineIndex = lineNum;
+    let translationY = LINE_HEIGHT * lineNum
+    Logger.log(TAG, `滚动到 ${lineNum} 行， y: ${translationY}`);
     this.scrollerForScroll.scrollTo({
       xOffset: 0, yOffset: translationY, animation: {
         duration: 500,
         curve: Curve.Smooth
       }
     })
-    // this.scrollerForScroll.scrollToIndex()
-    if (this.currentLineIndex == this.contentLines.length - LINES_PER_PAGE) {
+    if (lineNum >= (this.contentLines.length - LINES_PER_PAGE)) {
       this.stopSpeedScroll()
     }
+    this.sendTextToGlass();
+  }
 
-    console.log(TAG, '滚动到:' + translationY);
+  /**
+   * 发送数据到眼镜端
+   * */
+  private sendTextToGlass() {
     let sendText = '';
     let targetIndex = LINES_PER_PAGE + this.currentLineIndex;
     for (let i = this.currentLineIndex; i < targetIndex && i < this.contentLines.length; i++) {
@@ -182,6 +177,66 @@ struct TeleprompterDetailPage {
     }
   }
 
+  private onTextAreaChanged() {
+    let layoutManager: LayoutManager = this.contentController.getLayoutManager();
+    if (layoutManager.getLineCount() <= 0 || this.contentLines.length > 0) {
+      return
+    }
+    let lineCount = layoutManager.getLineCount();
+    Logger.info(TAG, `文本总行数: ${lineCount}`);
+    for (let index = 0; index < lineCount; index++) {
+      let metrics = layoutManager.getLineMetrics(index)
+      let text = this.teleprompterData.content.substring(metrics.startIndex, metrics.endIndex)
+      let line = new TeleprompterLine(index, metrics.height, metrics.startIndex, metrics.endIndex, text)
+      this.contentLines.push(line)
+      // Logger.log(TAG, 'line: ' + line.toString());
+    }
+  }
+
+  private onStackAreaChanged() {
+    let stackViewSize = ViewUtil.getComponentSize('stack')
+    this.maskLayerHeight = px2vp(stackViewSize.height) - LINE_HEIGHT * LINES_PER_PAGE;
+    let spaceLineCount = this.maskLayerHeight / LINE_HEIGHT;
+    for (let i = 0; i < spaceLineCount; i++) {
+      this.teleprompterData.content = this.teleprompterData.content + '\n'
+    }
+    Logger.warn(TAG, 'maskLayerHeight:' + this.maskLayerHeight)
+  }
+
+  private afterScroll() {
+    let scrolledY = this.scrollerForScroll.currentOffset().yOffset;
+    if (scrolledY % LINE_HEIGHT == 0) {
+      this.sendTextToGlass();
+      return;
+    }
+    let targetLineNum = Math.floor(scrolledY / LINE_HEIGHT);
+    Logger.debug(TAG, `scrolled y: ${scrolledY}`);
+    this.innerScrollLine(targetLineNum);
+  }
+
+  /**
+   * 获取到语音识别的结果后，需要滚动到文本对应的行数
+   * @param result 通过语音流识别到的文本内容
+   * */
+  private afterGetTranscriptResult(result: string) {
+    if (!isBlank(result) && result.length == 1) {
+      Logger.info(TAG, `return: ${result}`);
+      return;
+    }
+    let lastLine = this.currentLineIndex + LINES_PER_PAGE;
+    // Logger.info(TAG, `lastLine: ${lastLine}`);
+    for (let i = this.currentLineIndex; i < lastLine; i++) {
+      let lineText = this.contentLines[i].text;
+      let findSuccess = lineText.indexOf(result) >= 0;
+      // Logger.info(TAG, `line: ${i}, text: ${lineText}, findSuccess: ${findSuccess}}`);
+      if (findSuccess && i > this.currentLineIndex) {
+        Logger.info(TAG, `语音识别到当前行数: ${i}`);
+        this.innerScrollLine(i);
+        return;
+      }
+    }
+  }
+
   build() {
     RelativeContainer() {
       CustomNavigationBar({ parTitle: $r("app.string.teleprompter"), parBGColor: Color.White }).alignRules({
@@ -206,12 +261,12 @@ struct TeleprompterDetailPage {
         Stack({ alignContent: Alignment.BottomStart }) {
           Scroll(this.scrollerForScroll) {
             Text(this.teleprompterData.content, { controller: this.contentController })
+              .id('contentText')
               .fontColor('#343434')
               .fontSize(16)
-              .fontFamily('kaishu')
-              .padding({ left: 25, right: 25 })
-              .lineHeight(25)
-              .alignSelf(ItemAlign.Start)
+              // .fontFamily('kaishu')
+              .lineHeight(LINE_HEIGHT)
+              .padding({ left: 35, right: 35 })
               .width('100%')
               .onAreaChange(() => {
                 this.onTextAreaChanged();
@@ -219,9 +274,10 @@ struct TeleprompterDetailPage {
           }
           .width('100%')
           .backgroundColor(Color.White)
-          .margin({ bottom: 60 })
-          .scrollBarWidth(0)
-          .edgeEffect(EdgeEffect.Spring)
+          // .edgeEffect(EdgeEffect.Spring)
+          .onScrollStop(() => {
+            this.afterScroll()
+          })
 
           //遮罩层
           Text()
@@ -241,7 +297,7 @@ struct TeleprompterDetailPage {
         .id('stack')
         .onAreaChange(() => {
           this.onStackAreaChanged();
-        })
+        }).layoutWeight(1)
       }
       .id('content')
       .backgroundColor($r('app.color.teleprompt_detail_background'))
@@ -281,57 +337,5 @@ struct TeleprompterDetailPage {
     .height('100%')
     .width('100%')
     .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
-  }
-
-  private onTextAreaChanged() {
-    let layoutManager: LayoutManager = this.contentController.getLayoutManager();
-    if (layoutManager.getLineCount() <= 0 || this.contentLines.length > 0) {
-      return
-    }
-    let lineCount = layoutManager.getLineCount();
-    console.warn('@tc', 'lineCount: ' + lineCount);
-    for (let index = 0; index < lineCount; index++) {
-      let metrics = layoutManager.getLineMetrics(index)
-      let text = this.teleprompterData.content.substring(metrics.startIndex, metrics.endIndex)
-      let line = new TeleprompterLine(index, metrics.height, metrics.startIndex, metrics.endIndex, text)
-      this.contentLines.push(line)
-      console.log('@tc', 'line: ' + line.toString());
-    }
-  }
-
-  private onStackAreaChanged() {
-    let screenHeightPX = DevicesUtil.getScreenHeight(false)
-    let statusBarHeightPx = DevicesUtil.getStatusBarHeight(this.context, false).then((height) => {
-      console.log(TAG, 'statusBarHeightPX:' + height + ', screenHeight:' + screenHeightPX)
-
-      let navigationBarViewSize = ViewUtil.getComponentSize('navigationBar')
-      console.log(TAG,
-        'navigationBar width: ' + navigationBarViewSize.width + ', height:' + navigationBarViewSize.height);
-
-      let contentViewSize = ViewUtil.getComponentSize('content')
-      console.log(TAG, 'content width: ' + contentViewSize.width + ', height:' + contentViewSize.height);
-
-      let stackViewSize = ViewUtil.getComponentSize('stack')
-      console.log(TAG, 'stack width: ' + stackViewSize.width + ', height:' + stackViewSize.height);
-
-      let topContentViewSize = ViewUtil.getComponentSize('topContent')
-      console.log(TAG, 'topContent width: ' + topContentViewSize.width + ', height:' + topContentViewSize.height);
-
-      let bottomActionViewSize = ViewUtil.getComponentSize('bottomAction')
-      console.log(TAG, 'bottomAction width: ' + bottomActionViewSize.width + ', height:' + bottomActionViewSize.height);
-
-      let maskLayerViewSize = ViewUtil.getComponentSize('maskLayer')
-      console.log(TAG, 'maskLayer width: ' + maskLayerViewSize.width + ', height:' + maskLayerViewSize.height);
-
-      this.maskLayerHeight = screenHeightPX - height - navigationBarViewSize.height - topContentViewSize.height -
-        (this.lineHeight - 42) * LINES_PER_PAGE;
-
-      let splitCount = this.maskLayerHeight / (this.lineHeight + 30);
-      for (let i = 0; i < splitCount; i++) {
-        this.teleprompterData.content = this.teleprompterData.content + '\n'
-      }
-      this.maskLayerHeight = DevicesUtil.pxToVp(this.maskLayerHeight)
-      console.warn(TAG, 'maskLayerHeight:' + this.maskLayerHeight)
-    })
   }
 }

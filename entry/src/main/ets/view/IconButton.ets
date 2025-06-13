@@ -1,7 +1,7 @@
 @Preview
 struct IconButtonPreview {
   build() {
-    IconButton({ iconRes: $r('app.media.ic_public_download'), text: 'New' })
+    IconButton({ iconRes: $r("app.media.ic_teleprompter_import"), text: 'New' })
   }
 }
 

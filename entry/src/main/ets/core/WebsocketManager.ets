@@ -125,7 +125,7 @@ export class WebsocketManager {
     // Logger.debug(TAG, `发送文本消息: ${message}`);
     try {
       this.wsClient?.send(message).then(() => {
-        // Logger.info(TAG, '文本消息发送成功');
+        // Logger.info(TAG, '文本消息发送成功:'+message.length);
       }).catch((error: BusinessError) => {
         Logger.error(TAG, '文本消息发送失败:' + error.message);
         this.onErrorCallback?.(error);

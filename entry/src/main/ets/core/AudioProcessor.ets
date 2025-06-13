@@ -76,11 +76,11 @@ export class AudioProcessor {
 
       // 创建音频采集器
       this.audioCapturer = await audio.createAudioCapturer(audioCapturerOptions);
-      this.audioCapturer?.on("readData", (buffer: ArrayBuffer) => {
-        if (this.pcmDataCallback != null) {
-          this.pcmDataCallback(buffer, buffer.byteLength);
-        }
-      })
+      // this.audioCapturer?.on("readData", (buffer: ArrayBuffer) => {
+      //   if (this.pcmDataCallback != null) {
+      //     this.pcmDataCallback(buffer, buffer.byteLength);
+      //   }
+      // })
       if (!this.audioCapturer) {
         Logger.error(TAG, 'AudioProcessor: 创建音频采集器失败');
         return;
@@ -93,7 +93,7 @@ export class AudioProcessor {
       Logger.info(TAG, 'AudioProcessor: 音频采集已启动');
 
       // // 开始读取PCM数据
-      // this.readAudioData();
+      this.readAudioData();
     } catch (error) {
       Logger.error(TAG, `AudioProcessor: 启动音频采集时出错: ${JSON.stringify(error)}`);
       await this.releaseAudioCapturer();
@@ -139,22 +139,20 @@ export class AudioProcessor {
    * 读取音频数据并通过回调传递给上层
    */
   private async readAudioData(): Promise<void> {
-    if (!this.isCapturing || !this.audioCapturer) {
+    if (!this.isCapturing || !this.audioCapturer || this.pcmDataCallback == undefined) {
       return;
     }
 
     try {
       // 获取缓冲区大小
-      // const bufferSize = await this.audioCapturer.getBufferSize();
-      // const audioBuffer = new ArrayBuffer(bufferSize);
+      // const audioBuffer = new ArrayBuffer(1028 * 10);
 
-      const readSize = await this.getMinBufferSize();
+      // const readSize = await this.getMinBufferSize();
+      const readSize = 1280 * 10;
       // 读取音频数据
       await this.audioCapturer.read(readSize, false).then((audioBuffer) => {
-        if (this.pcmDataCallback) {
-          // 调用回调函数传递PCM数据
-          this.pcmDataCallback(audioBuffer, audioBuffer.byteLength);
-        }
+        // 调用回调函数传递PCM数据
+        this.pcmDataCallback!(audioBuffer, audioBuffer.byteLength);
       });
 
       // 继续读取下一块数据

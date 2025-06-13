@@ -130,7 +130,7 @@ struct TeleprompterHomePage {
 
       Row({ space: 5 }) {
         IconButton({
-          iconRes: $r('app.media.ic_public_add_norm'),
+          iconRes: $r("app.media.ic_teleprompter_create"),
           text: $r('app.string.teleprompt_new')
         }).layoutWeight(1)
           .onClick(() => {
@@ -138,7 +138,7 @@ struct TeleprompterHomePage {
             router.pushUrl({ url: 'pages/TeleprompterEditPage' })
           })
         IconButton({
-          iconRes: $r('app.media.ic_public_download'),
+          iconRes: $r("app.media.ic_teleprompter_import"),
           text: $r('app.string.teleprompt_import')
         }).layoutWeight(1).margin({ right: 20 })
           .onClick(() => {

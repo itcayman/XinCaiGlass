@@ -18,6 +18,7 @@ import { ResourceUtil } from '../utils/ResourceUtil';
 import { GlassView } from './GlassView';
 import { QuickSettingsView } from './QuickSettingsView';
 import { HeaderInfoView } from './HeaderInfoView';
+import { DevicesUtil } from '../utils/DevicesUtil';
 
 const VERTICAL_SPACING = ResourceUtil.getCommonPadding()[0]
 
@@ -68,6 +69,9 @@ struct HomeContent {
         HeaderInfoView().margin({ bottom: VERTICAL_SPACING })
         QuickSettingsView().margin({ bottom: VERTICAL_SPACING })
         GlassView().margin({ bottom: VERTICAL_SPACING })
+          .onClick(()=>{
+            router.pushUrl({ url: 'pages/SearchARGlassPage' })
+          })
         GridRow({
           columns: 2,
           gutter: { x: ResourceUtil.getCommonPadding()[2], y: VERTICAL_SPACING },
@@ -123,6 +127,7 @@ struct HomeContent {
         }
       }.margin({
         left: ResourceUtil.getCommonPadding()[3],
+        top: DevicesUtil.statusBarHeight,
         right: ResourceUtil.getCommonPadding()[3],
       }).height('100%')
     }

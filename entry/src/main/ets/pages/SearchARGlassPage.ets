@@ -79,7 +79,7 @@ struct SearchARGlassPage {
                   .onClick(() => {
                     gattClientManager.startConnect(item.deviceId)
                   })
-                Text(item.deviceId)
+                Text(item.deviceId + ' ' + item.rssi)
                   .margin({left: 20})
                   .fontColor('#cccccc')
               }
@@ -92,7 +92,7 @@ struct SearchARGlassPage {
                   .onClick(() => {
                     gattClientManager.startConnect(item.deviceId)
                   })
-                Text(item.deviceId)
+                Text(item.deviceId + ' ' + item.rssi)
                   .margin({left: 20})
                   .fontColor('#cccccc')
               }
