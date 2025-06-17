@@ -131,6 +131,14 @@
     {
       "name": "interpreter_desc",
       "value": "Realtime Translate"
+    },
+    {
+      "name": "ai_input_holder",
+      "value": "Send messages to CMG AI"
+    },
+    {
+      "name": "ai_wait_answer",
+      "value": "I'm thinking..."
     }
   ]
 }

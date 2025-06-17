@@ -22,6 +22,7 @@ import { CommonConstants } from '../constants/CommonConstants';
 import { ResourceUtil } from '../utils/ResourceUtil';
 import { BlankView } from './BlankView';
 import { HomeContent } from './HomeContent';
+import {AIAssistantContent} from './AIAssistantContent';
 import { ConfigurationConstant } from '@kit.AbilityKit';
 
 @Component
@@ -89,7 +90,7 @@ export struct Home {
         .tabBar(this.BottomTabBuilder(this.tabBarOption1))
 
         TabContent() {
-          BlankView()
+          AIAssistantContent()
         }
         .tabBar(this.BottomTabBuilder(this.tabBarOption2))
 

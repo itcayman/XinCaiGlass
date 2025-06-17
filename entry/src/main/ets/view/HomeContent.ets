@@ -1,25 +1,20 @@
 // 导入页面路由模块
 import { router } from '@kit.ArkUI';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
-import bleScanManager from '../core/BleScanManager';
-import discoveryDeviceManager from '../core/DiscoveryDeviceManager';
 import { PermissionUtil } from '../utils/PermissionUtil';
-import ProtocolPacket from '../core/ProtocolPacket';
-import { buffer } from '@kit.ArkTS';
-import { ByteUtil } from '../utils/ByteUtil';
-import { Test } from '../utils/Test';
 import { BLE_DEVICE_CONNECTED, BLE_DEVICE_DISCONNECTED } from '../utils/EventIds';
 import dateTimeManager from '../core/DateTimeManager';
-import databaseManager, { DatabaseManager } from '../database/DatabaseManager';
 import { JhProgressHUD } from '../utils/JhProgressHUD';
-import cmgManager from '../core/CMGManager';
 import { HomeGridItemView } from './HomeGridItemView';
 import { ResourceUtil } from '../utils/ResourceUtil';
 import { GlassView } from './GlassView';
 import { QuickSettingsView } from './QuickSettingsView';
 import { HeaderInfoView } from './HeaderInfoView';
 import { DevicesUtil } from '../utils/DevicesUtil';
+import aiHttpRequest from '../network/AIHttpRequest';
+import { Logger } from '../utils/Logger';
 
+const TAG = '[HomeContent]'
 const VERTICAL_SPACING = ResourceUtil.getCommonPadding()[0]
 
 @Component
@@ -69,8 +64,13 @@ struct HomeContent {
         HeaderInfoView().margin({ bottom: VERTICAL_SPACING })
         QuickSettingsView().margin({ bottom: VERTICAL_SPACING })
         GlassView().margin({ bottom: VERTICAL_SPACING })
-          .onClick(()=>{
-            router.pushUrl({ url: 'pages/SearchARGlassPage' })
+          .onClick(() => {
+            // router.pushUrl({ url: 'pages/SearchARGlassPage' })
+            aiHttpRequest.aiChatWithText('南昌今天天气怎么样').then((result) => {
+              Logger.error(TAG, `aiChatResult, ${result.toString()}`);
+            }).catch((error: BusinessError) => {
+              Logger.error(TAG, `aiChatError, ${error.code}`);
+            })
           })
         GridRow({
           columns: 2,
@@ -86,7 +86,7 @@ struct HomeContent {
             })
           }
           .onClick(() => {
-            router.pushUrl({ url: 'pages/SearchARGlassPage' })
+            // router.pushUrl({ url: 'pages/SearchARGlassPage' })
           })
 
           //提词器

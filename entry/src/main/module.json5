@@ -64,6 +64,10 @@
         "reason": "$string:permission_reason_network"
       },
       {
+        "name": "ohos.permission.GET_NETWORK_INFO",
+        "reason": "$string:permission_reason_network"
+      },
+      {
         "name": "ohos.permission.MICROPHONE",
         "reason": "$string:permission_reason_microphone",
         "usedScene": {

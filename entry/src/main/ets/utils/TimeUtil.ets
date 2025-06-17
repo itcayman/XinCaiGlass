@@ -2,8 +2,7 @@ import { DateTime } from "../viewmodel/DateTime";
 import { systemDateTime } from "@kit.BasicServicesKit";
 
 export class TimeUtil {
-
-  static formatTimestamp(timestamp: number): string {
+  static formatTimestamp(timestamp: number, needSecond: boolean = false): string {
     // 创建一个 Date 对象，将时间戳转换为日期时间
     const date = new Date(timestamp);
     // 获取年份
@@ -19,6 +18,10 @@ export class TimeUtil {
     // 获取秒数
     const seconds = String(date.getSeconds()).padStart(2, '0');
 
+    if (needSecond) {
+      // 按照 'YYYY/MM/DD HH:mm:ss' 的格式拼接时间字符串
+      return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    }
     // 按照 'YYYY/MM/DD HH:mm' 的格式拼接时间字符串
     return `${year}/${month}/${day} ${hours}:${minutes}`;
   }
@@ -40,5 +43,5 @@ export class TimeUtil {
     // 获取秒数
     dateTime.second = date.getSeconds();
     return dateTime;
-	}
+  }
 }

@@ -28,6 +28,7 @@ export class GattClientManager {
   mySecondDescriptorUuid: string = '00002903-0000-1000-8000-00805F9B34FB';
   found: boolean = false;
 
+
   // 构造BLEDescriptor
   private initDescriptor(des: string, charUuid: string, value: ArrayBuffer): ble.BLEDescriptor {
     let descriptor: ble.BLEDescriptor = {
@@ -302,6 +303,7 @@ export class GattClientManager {
     try {
       this.gattClient.readCharacteristicValue(notifyCharacteristic).then((outData: ble.BLECharacteristic) => {
         this.logCharacteristic(outData);
+        let result = ProtocolPacket.decode(new Uint8Array(outData.characteristicValue));
       }).catch((err: Result) => {
         console.error(TAG, '读取通知数据特征值报错======:' + err.code + ", data:" + err.data);
       })

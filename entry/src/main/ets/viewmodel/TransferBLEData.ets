@@ -5,7 +5,7 @@ export class TransferBLEData {
   public error?: string;
   public wrapperData: boolean = true;
 
-  constructor(cmd: number, tlvValue: Uint8Array | string, error: string, wrapperData:boolean = true) {
+  constructor(cmd: number, tlvValue: Uint8Array | string, error: string = '', wrapperData:boolean = true) {
     this.cmd = cmd;
     this.tlvValue = tlvValue;
     this.error = error;

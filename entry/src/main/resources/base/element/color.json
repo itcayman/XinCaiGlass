@@ -75,6 +75,14 @@
     {
       "name": "tab_sel_color",
       "value": "#0A59F7"
+    },
+    {
+      "name": "ai_item_ask_background",
+      "value": "#FFE6EEFD"
+    },
+    {
+      "name": "ai_item_answer_background",
+      "value": "#FFFFFF"
     }
   ]
 }

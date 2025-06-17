@@ -116,8 +116,8 @@ class ProtocolPacket {
     // 提取命令和值
     const cmd = data[1];
     const tlvValue = data.slice(5, 5 + tlvLen);
-
-    return new TransferBLEData(cmd, tlvValue, '');
+    let result = new TransferBLEData(cmd, tlvValue, '', false);
+    return result;
   }
 
   // 辅助方法：将Uint8Array转换为字符串
