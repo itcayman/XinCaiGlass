@@ -6,3 +6,6 @@ export const BLE_DEVICE_DISCONNECTED = 0x05
 export const BLE_DEVICE_UNDEFINED = 0x06
 
 export const TELEPROMPTER_ADD_SUCCESS = 0x15
+
+export const COMMAND_REMOTE_CONTROL = 0x20
+export const COMMAND_DOUBLE_CLICK = 0x21

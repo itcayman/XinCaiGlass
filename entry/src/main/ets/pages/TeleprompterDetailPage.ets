@@ -1,5 +1,5 @@
 import { App, font, MeasureText, MeasureUtils, router } from '@kit.ArkUI';
-import CommandManager from '../core/CommandManager';
+import { DoubleClick, RemoteControl } from '../core/CommandManager';
 import { DevicesUtil } from '../utils/DevicesUtil';
 import { TimeUtil } from '../utils/TimeUtil';
 import { ViewUtil } from '../utils/ViewUtil';
@@ -8,7 +8,6 @@ import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
 import { TeleprompterLine } from '../viewmodel/TeleprompterLine';
 import { common } from '@kit.AbilityKit';
 import { PermissionUtil } from '../utils/PermissionUtil';
-import realtimeAsrManager from '../core/RealtimeAsrClient';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { Logger } from '../utils/Logger';
 import { JhProgressHUD } from '../utils/JhProgressHUD';
@@ -16,6 +15,7 @@ import { DynamicIconButton } from '../view/DynamicIconButton';
 
 import measure from '@ohos.measure'
 import { isBlank } from '../utils/StringUtil';
+import cmgClient from '../core/CMGClient';
 
 // import router from '@ohos.router'
 const TAG: string = '[TeleprompterDetail]';
@@ -46,6 +46,34 @@ struct TeleprompterDetailPage {
   @State private currentLineIndex: number = 0
   private timer: number | null = null
   private contentLines: Array<TeleprompterLine> = new Array()
+  private remoteControlCallback = (command: RemoteControl) => {
+    Logger.warn(TAG, `收到遥控器按键: ${command}`);
+    switch (command) {
+      case RemoteControl.LEFT:
+        break;
+      case RemoteControl.RIGHT:
+        break;
+      case RemoteControl.PREV:
+        break;
+      case RemoteControl.NEXT:
+        break;
+      case RemoteControl.ESC:
+        break;
+    }
+  };
+  private doubleClickCallback = (command: DoubleClick) => {
+    Logger.warn(TAG, `收到双击事件: ${command}`);
+    switch (command) {
+      case DoubleClick.START:
+        break;
+      case DoubleClick.STOP:
+        break;
+      case DoubleClick.CLOSE:
+        break;
+      case DoubleClick.ERROR:
+        break;
+    }
+  };
 
   aboutToAppear() {
     this.teleprompterData = router.getParams() as TeleprompterEntity
@@ -56,19 +84,26 @@ struct TeleprompterDetailPage {
       familySrc: '/font/SanJiWenHaoKaiShu-2.ttf' // font文件与pages目录同级
     })
     Logger.warn(TAG, '进入提词器详情页');
-    CommandManager.enterTeleprompterPage()
+    cmgClient.commandM().addRemoteControlCallback(this.remoteControlCallback);
+    cmgClient.commandM().addDoubleCallback(this.doubleClickCallback);
+    cmgClient.commandM().enterTeleprompterPage()
   }
 
   aboutToDisappear(): void {
-    this.stopSpeedScroll()
-    CommandManager.enterHomePage()
+    this.stopSpeedScroll();
+    cmgClient.commandM().removeRemoteControlCallback(this.remoteControlCallback);
+    cmgClient.commandM().removeDoubleCallback(this.doubleClickCallback);
+    cmgClient.commandM().enterHomePage();
+    cmgClient.realtimeAsrM().stopAudioCapture();
+    cmgClient.realtimeAsrM().setConnectSuccessCallback(undefined);
+    cmgClient.realtimeAsrM().setTranscriptionCallback(undefined);
   }
 
   private initRealtimeASR() {
-    realtimeAsrManager.setConnectSuccessCallback(() => {
-      realtimeAsrManager.startAudioCapture();
+    cmgClient.realtimeAsrM().setConnectSuccessCallback(() => {
+      cmgClient.realtimeAsrM().startAudioCapture();
     })
-    realtimeAsrManager.setTranscriptionCallback((result) => {
+    cmgClient.realtimeAsrM().setTranscriptionCallback((result) => {
       this.afterGetTranscriptResult(result);
     })
     PermissionUtil.init(getContext(this))
@@ -78,7 +113,7 @@ struct TeleprompterDetailPage {
       .then(() => {
         this.btnDynamicScrollIcon = $r('app.media.ic_mic_off');
         this.btnDynamicScrollText = $r('app.string.teleprompter_stop_scroll');
-        realtimeAsrManager.connect()
+        cmgClient.realtimeAsrM().connect()
       })
       .catch((error: BusinessError) => {
         Logger.error(TAG, JSON.stringify(error))
@@ -96,11 +131,11 @@ struct TeleprompterDetailPage {
     this.isDynamicScrolling = false;
     this.btnDynamicScrollIcon = $r('app.media.ic_mic_on');
     this.btnDynamicScrollText = $r('app.string.teleprompter_dynamic_scroll');
-    if (realtimeAsrManager.isRecordingAudio()) {
-      realtimeAsrManager.stopAudioCapture();
-      realtimeAsrManager.complete();
+    if (cmgClient.realtimeAsrM().isRecordingAudio()) {
+      cmgClient.realtimeAsrM().stopAudioCapture();
+      cmgClient.realtimeAsrM().complete();
     }
-    realtimeAsrManager.reset();
+    cmgClient.realtimeAsrM().reset();
   }
 
   // 开始匀速滚动控制
@@ -153,7 +188,7 @@ struct TeleprompterDetailPage {
     for (let i = this.currentLineIndex; i < targetIndex && i < this.contentLines.length; i++) {
       sendText += this.contentLines[i].text + '\n'
     }
-    CommandManager.scrollTeleprompterText(sendText)
+    cmgClient.commandM().scrollTeleprompterText(sendText)
   }
 
   private btnDynamicClickEvent = () => {
@@ -263,8 +298,7 @@ struct TeleprompterDetailPage {
             Text(this.teleprompterData.content, { controller: this.contentController })
               .id('contentText')
               .fontColor('#343434')
-              .fontSize(16)
-              // .fontFamily('kaishu')
+              .fontSize(16)// .fontFamily('kaishu')
               .lineHeight(LINE_HEIGHT)
               .padding({ left: 35, right: 35 })
               .width('100%')

@@ -3,8 +3,8 @@ import { AudioProcessor } from "./AudioProcessor";
 import { WebsocketManager, WebSocketMessageType } from "./WebsocketManager";
 import { common } from "@kit.AbilityKit";
 import { ByteUtil } from "../utils/ByteUtil";
-import fs, { Options, WriteOptions } from '@ohos.file.fs';
 import { isBlank } from "../utils/StringUtil";
+import { PCMManager } from "./PCMManager";
 
 interface Transcription {
   model: string
@@ -49,14 +49,15 @@ const TAG = '[RealtimeASR]'
  * 豆包语音识别连接管理类
  * https://www.volcengine.com/docs/6893/1527759#client-event-1
  */
-export class RealtimeAsrClient {
+export class RealtimeAsrManager {
   private context = getContext(this) as common.UIAbilityContext;
   private websocketManager = new WebsocketManager()
   private audioProcessor = new AudioProcessor(this.context)
   private sessionChecked = false
   private lastResultText = ''
-  private onConnectSuccessCallback: (() => void) | null = null;
-  private onTranscriptionCallback: ((result: string) => void) | null = null;
+  private pcm = new PCMManager();
+  private onConnectSuccessCallback: Callback<void> | undefined;
+  private onTranscriptionCallback: Callback<string> | undefined;
 
   constructor() {
     this.initAudioProcessor();
@@ -76,11 +77,11 @@ export class RealtimeAsrClient {
     })
   }
 
-  public setConnectSuccessCallback(callback: () => void) {
+  public setConnectSuccessCallback(callback: Callback<void> | undefined) {
     this.onConnectSuccessCallback = callback;
   }
 
-  public setTranscriptionCallback(callback: (result: string) => void) {
+  public setTranscriptionCallback(callback: Callback<string> | undefined) {
     this.onTranscriptionCallback = callback;
   }
 
@@ -89,10 +90,12 @@ export class RealtimeAsrClient {
   }
 
   public startAudioCapture() {
+    this.pcm.createPCMFile();
     this.audioProcessor.startAudioCapture();
   }
 
   public stopAudioCapture() {
+    this.pcm.done();
     this.audioProcessor.stopAudioCapture();
   }
 
@@ -124,8 +127,8 @@ export class RealtimeAsrClient {
         if (isBlank(transcriptionResult)) {
           return;
         }
-        transcriptionResult = transcriptionResult.replaceAll(RegExp("[,，.。！]", "g"),'|')
-        // Logger.debug(TAG, `转化后结果: ${transcriptionResult}`)
+        transcriptionResult = transcriptionResult.replaceAll(RegExp("[,，.。！]", "g"), '|')
+        Logger.debug(TAG, `转化后结果: ${transcriptionResult}`)
         let text = transcriptionResult;
         if (transcriptionResult.indexOf('|') >= 0) {
           let splits = transcriptionResult.split('|');
@@ -151,22 +154,9 @@ export class RealtimeAsrClient {
 
   private initAudioProcessor() {
     this.audioProcessor.setAudioParams();
-
-    let audioBuffer:ArrayBuffer = new ArrayBuffer(1280* 10);
-    let bufferSize: number = 0;
-    let path = getContext().cacheDir;
-    let filePath = path + '/StarWars10s-2C-48000-4SW.pcm';
-    let file: fs.File = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     this.audioProcessor.setPcmDataCallback((buffer: ArrayBuffer, size: number) => {
-      // Logger.debug(TAG, `采集到音频数据，size:${size}`)
-      // let options: WriteOptions = {
-      //   offset: bufferSize,
-      //   length: buffer.byteLength
-      // }
-      // fs.writeSync(file.fd, buffer, options);
-      // bufferSize += buffer.byteLength;
-
       this.sendAudioData(buffer);
+      this.pcm.writePCMData(buffer);
     })
   }
 
@@ -188,7 +178,7 @@ export class RealtimeAsrClient {
     this.websocketManager.sendTextMessage(configStr)
   }
 
-  private sendAudioData(audio: ArrayBuffer) {
+  public sendAudioData(audio: ArrayBuffer) {
     if (!this.sessionChecked) {
       Logger.error(TAG, '服务端未确认session配置!!!')
       return;
@@ -197,11 +187,7 @@ export class RealtimeAsrClient {
       'type': 'input_audio_buffer.append',
       'audio': ByteUtil.base64EncodeToStringNoWrap(audio)
     };
+    // Logger.debug(TAG, `发送文本消息: ${audio.byteLength}`);
     this.websocketManager.sendTextMessage(JSON.stringify(audioData));
   }
-
 }
-
-let realtimeAsrManager = new RealtimeAsrClient();
-
-export default realtimeAsrManager as RealtimeAsrClient;

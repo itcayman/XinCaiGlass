@@ -13,6 +13,7 @@ import { HeaderInfoView } from './HeaderInfoView';
 import { DevicesUtil } from '../utils/DevicesUtil';
 import aiHttpRequest from '../network/AIHttpRequest';
 import { Logger } from '../utils/Logger';
+import cmgClient from '../core/CMGClient';
 
 const TAG = '[HomeContent]'
 const VERTICAL_SPACING = ResourceUtil.getCommonPadding()[0]
@@ -65,12 +66,7 @@ struct HomeContent {
         QuickSettingsView().margin({ bottom: VERTICAL_SPACING })
         GlassView().margin({ bottom: VERTICAL_SPACING })
           .onClick(() => {
-            // router.pushUrl({ url: 'pages/SearchARGlassPage' })
-            aiHttpRequest.aiChatWithText('南昌今天天气怎么样').then((result) => {
-              Logger.error(TAG, `aiChatResult, ${result.toString()}`);
-            }).catch((error: BusinessError) => {
-              Logger.error(TAG, `aiChatError, ${error.code}`);
-            })
+            router.pushUrl({ url: 'pages/SearchARGlassPage' })
           })
         GridRow({
           columns: 2,
@@ -87,6 +83,7 @@ struct HomeContent {
           }
           .onClick(() => {
             // router.pushUrl({ url: 'pages/SearchARGlassPage' })
+            cmgClient.commandM().enterTranslatePage()
           })
 
           //提词器
@@ -110,7 +107,8 @@ struct HomeContent {
             })
           }
           .onClick(() => {
-            router.pushUrl({ url: 'pages/TeleprompterHomePage' })
+            // router.pushUrl({ url: 'pages/TeleprompterHomePage' })
+            cmgClient.commandM().enterTranslatePage()
           })
 
           //智慧提醒

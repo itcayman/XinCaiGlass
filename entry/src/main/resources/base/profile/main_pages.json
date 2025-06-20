@@ -5,6 +5,7 @@
     "pages/TeleprompterHomePage",
     "pages/TeleprompterEditPage",
     "pages/TeleprompterDetailPage",
-    "pages/TestTextPage"
+    "pages/TestTextPage",
+    "pages/PcmFileWriter"
   ]
 }

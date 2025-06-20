@@ -1,6 +1,6 @@
 import { systemDateTime } from "@kit.BasicServicesKit";
 import { TimeUtil } from "../utils/TimeUtil";
-import CommandManager from "./CommandManager";
+import cmgClient from "./CMGClient";
 
 const TAG: string = '[JVC]DateTimeManager'
 
@@ -14,7 +14,7 @@ export class DateTimeManager {
       let dateTime = TimeUtil.getCurrentDateTime()
       if (dateTime.minute != this.lastMinute) {
         this.lastMinute = dateTime.minute
-        CommandManager.reportDateTime(dateTime)
+        cmgClient.commandM().reportDateTime(dateTime)
       }
     }, 1000);
   }

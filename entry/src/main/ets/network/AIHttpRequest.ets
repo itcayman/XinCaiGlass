@@ -45,7 +45,7 @@ export class AIHttpRequest {
       };
       let request = http.createHttp()
       request.request(CHAT_URL, requestOption).then((value: http.HttpResponse) => {
-        // Logger.info(TAG, `result, text: ${value.result}`)
+        Logger.info(TAG, `result, text: ${value.result}`)
         if (value.responseCode === http.ResponseCode.OK) {
           let obj = JSON.parse(value.result as string) as ChatResponse
           resolve(obj)
@@ -106,7 +106,7 @@ export class AIHttpRequest {
         if (isBlank(jsonData)) {
           continue;
         }
-        if ('[DONE]' == str) {
+        if ('[DONE]' == str || ' [DONE]' == str) {
           result.push(new ChatResponse())
           return result;
         }

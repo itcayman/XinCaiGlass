@@ -7,6 +7,7 @@ import { AIAssistantBottomView } from './AIAssistantBottomView';
 import aiHttpRequest from '../network/AIHttpRequest';
 import { ChatResponse, Choice } from '../viewmodel/ChatResponse';
 import { Logger } from '@ohos/httpclient';
+import cmgClient from '../core/CMGClient';
 
 const TAG = '[AIAssistant]'
 

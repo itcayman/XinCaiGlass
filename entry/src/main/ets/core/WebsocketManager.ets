@@ -28,6 +28,13 @@ const TAG = '[WebSocket]';
 export class WebsocketManager {
   private wsClient: webSocket.WebSocket | null = null;
   private state: WebSocketState = WebSocketState.CLOSED;
+  private url: string = ''
+  private heartbeatTimer: number = -1;
+  private heartbeatInterval: number = 30000; // 默认30秒心跳间隔
+  private reconnectTimer: number = -1;
+  private reconnectInterval: number = 5000; // 重连间隔
+  private maxReconnectTimes: number = 5;
+  private currentReconnectTimes: number = 0;
   // 回调函数
   private onOpenCallback: (() => void) | null = null;
   private onMessageCallback: ((data: string | ArrayBuffer, type: WebSocketMessageType) => void) | null = null;
@@ -42,6 +49,7 @@ export class WebsocketManager {
       return;
     }
 
+    this.url = url;
     this.state = WebSocketState.CONNECTING;
 
     try {
@@ -52,6 +60,8 @@ export class WebsocketManager {
       this.wsClient.on('open', () => {
         Logger.info(TAG, 'WebSocket连接 open');
         this.state = WebSocketState.OPEN;
+        this.resetReconnect();
+        this.startHeartbeat();
         this.onOpenCallback?.();
       });
 
@@ -67,12 +77,18 @@ export class WebsocketManager {
         Logger.info(TAG, 'WebSocket连接 error');
         this.state = WebSocketState.CLOSED;
         this.onErrorCallback?.(error);
+        this.reconnect();
       });
 
       this.wsClient.on('close', (event) => {
         Logger.info(TAG, 'WebSocket连接 close');
         this.state = WebSocketState.CLOSED;
-        this.onCloseCallback?.(event.code, event.message);
+        // 非主动关闭时尝试重连
+        if (event && event.code !== 1000) {
+          this.reconnect();
+        } else {
+          this.onCloseCallback?.(event.code, event.message);
+        }
       });
 
       let key = 'sk-c6d7f09f5b634ee6ab9d860643750004gwvpvqt2jeeb5p5z';
@@ -147,7 +163,8 @@ export class WebsocketManager {
     }
 
     this.state = WebSocketState.CLOSING;
-
+    this.stopHeartbeat();
+    this.resetReconnect();
     try {
       this.wsClient?.close({
         code: code,
@@ -203,7 +220,58 @@ export class WebsocketManager {
     return this.state;
   }
 
-  private onReceiverStringMessage(message: string) {
+  // 发送心跳
+  private sendHeartbeat(): void {
+    if (this.state != WebSocketState.OPEN || !this.wsClient) {
+      return;
+    }
 
+    try {
+      this.sendTextMessage('ping');
+      console.info('发送心跳包');
+    } catch (error) {
+      console.error(`心跳发送失败: ${JSON.stringify(error)}`);
+    }
+  }
+
+  // 开始心跳
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setTimeout(() => {
+      this.sendHeartbeat();
+      this.startHeartbeat();
+    }, this.heartbeatInterval) as number;
+  }
+
+  // 停止心跳
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer !== -1) {
+      clearTimeout(this.heartbeatTimer);
+      this.heartbeatTimer = -1;
+    }
+  }
+
+  // 重连机制
+  private reconnect(): void {
+    if (this.currentReconnectTimes >= this.maxReconnectTimes) {
+      console.error('达到最大重连次数，停止重连');
+      return;
+    }
+
+    this.stopHeartbeat();
+    this.reconnectTimer = setTimeout(() => {
+      console.info(`尝试重连 (${this.currentReconnectTimes + 1}/${this.maxReconnectTimes})`);
+      this.currentReconnectTimes++;
+      this.connect(this.url);
+    }, this.reconnectInterval) as number;
+  }
+
+  // 重置重连计数
+  private resetReconnect(): void {
+    this.currentReconnectTimes = 0;
+    if (this.reconnectTimer !== -1) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = -1;
+    }
   }
 }

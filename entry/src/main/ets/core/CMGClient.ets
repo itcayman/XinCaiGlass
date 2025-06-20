@@ -1,20 +1,26 @@
 import { CMGDeviceInfo } from "../viewmodel/CMGDeviceInfo";
 import { LocalDataManager } from "./LocalDataManager";
 import { bundleManager, Context } from "@kit.AbilityKit";
-import { bluetoothManager } from "@kit.MDMKit";
 import { BluetoothManager } from "./BluetoothManager";
 import { isBlank } from "../utils/StringUtil";
 import { emitter } from "@kit.BasicServicesKit";
 import { BLE_SCAN_ID } from "../utils/EventIds";
 import { BleScanItem } from "../viewmodel/BleScanItem";
-import databaseManager from "../database/DatabaseManager";
+import { CommandManager } from "./CommandManager";
+import { AIManager } from "./AIManager";
+import { RealtimeAsrManager } from "./RealtimeAsrClient";
+import { GattClientManager } from "./GattClientManager";
 
 const DEVICE_NAME_FILTER = 'CMG_Y01_0001'
 
-export class CMGManager {
+export class CMGClient {
   private glassDevice: CMGDeviceInfo = new CMGDeviceInfo();
   private localData: LocalDataManager = new LocalDataManager();
   private bluetooth: BluetoothManager = new BluetoothManager();
+  private realtimeASR = new RealtimeAsrManager();
+  private gattClient: GattClientManager = new GattClientManager();
+  private command: CommandManager = new CommandManager(this.gattClient);
+  private ai: AIManager = new AIManager(this.command, this.realtimeASR, this.gattClient);
 
   init(context: Context) {
     this.localData.init(context);
@@ -26,6 +32,22 @@ export class CMGManager {
 
   public bluetoothM(): BluetoothManager {
     return this.bluetooth;
+  }
+
+  public realtimeAsrM(): RealtimeAsrManager {
+    return this.realtimeASR;
+  }
+
+  public commandM(): CommandManager {
+    return this.command;
+  }
+
+  public aiM(): AIManager {
+    return this.ai;
+  }
+
+  public gattClientM(): GattClientManager {
+    return this.gattClient;
   }
 
   public findDevice() {
@@ -53,6 +75,6 @@ export class CMGManager {
   }
 }
 
-let cmgManager = new CMGManager();
+let cmgClient = new CMGClient();
 
-export default cmgManager as CMGManager;
+export default cmgClient as CMGClient;

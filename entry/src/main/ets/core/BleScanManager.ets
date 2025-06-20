@@ -4,9 +4,10 @@ import { isBlank } from '../utils/StringUtil';
 import { BLE_SCAN_ID as BLE_SCAN_ID } from '../utils/EventIds';
 import { BleScanItem } from '../viewmodel/BleScanItem';
 import process from '@ohos.process';
+import { Logger } from '../utils/Logger';
 
 
-const TAG: string = '[JVC]BleScanManager';
+const TAG: string = '[BleScanManager]';
 const BLE_ADV_TYPE_FLAG = 0x01;
 const BLE_ADV_TYPE_16_BIT_SERVICE_UUIDS_INCOMPLETE = 0x02;
 const BLE_ADV_TYPE_16_BIT_SERVICE_UUIDS_COMPLETE = 0x03;
@@ -46,11 +47,11 @@ export class BleScanManager {
           if (isBlank(item.deviceName) || this.scanResult.has(item.deviceId)) {
             return
           }
-          console.info(TAG, '扫描到设备， deviceName:' + item.deviceName + ', deviceId:' + item.deviceId);
+          Logger.info(TAG, '扫描到设备， deviceName:' + item.deviceName + ', deviceId:' + item.deviceId);
           this.parseScanResult(item.data);
           this.scanResult.set(item.deviceId, item)
 
-          let bleItem:BleScanItem = new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, false)
+          let bleItem:BleScanItem = new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, false, false)
           let eventData: emitter.EventData = { data: { BleScanItem: bleItem } }
           let event: emitter.InnerEvent = { eventId: BLE_SCAN_ID, priority: emitter.EventPriority.HIGH }
           emitter.emit(event, eventData)
@@ -63,7 +64,7 @@ export class BleScanManager {
   private parseScanResult(data: ArrayBuffer) {
     let advData = new Uint8Array(data);
     if (advData.byteLength == 0) {
-      console.warn(TAG, 'nothing, adv data length is 0');
+      Logger.warn(TAG, 'nothing, adv data length is 0');
       return;
     }
     // console.info(TAG, 'advData: ' + JSON.stringify(advData));
@@ -228,9 +229,9 @@ export class BleScanManager {
       this.onScanResult(); // 订阅扫描结果
       ble.startBLEScan([scanFilter], scanOptions);
       this.isScaning = true
-      console.info(TAG, 'Ble扫描成功');
+      Logger.info(TAG, 'Ble扫描成功');
     } catch (err) {
-      console.error(TAG, 'Ble扫描失败, errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      Logger.error(TAG, 'Ble扫描失败, errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
     }
   }
 
@@ -243,12 +244,12 @@ export class BleScanManager {
     }
     try {
       ble.off('BLEDeviceFind', (data: Array<ble.ScanResult>) => { // 取消订阅扫描结果
-        console.info(TAG, 'Ble设备扫描结束');
+        Logger.info(TAG, 'Ble设备扫描结束');
       });
       ble.stopBLEScan();
       this.isScaning = false;
     } catch (err) {
-      console.error(TAG, '停止Ble扫描失败, errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      Logger.error(TAG, '停止Ble扫描失败, errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
     }
   }
 }

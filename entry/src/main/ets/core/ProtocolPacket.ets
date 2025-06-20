@@ -1,4 +1,6 @@
 import buffer from '@ohos.buffer';
+import { Logger } from '../utils/Logger';
+import { SecondTransferBLEData as SecondBLEData } from '../viewmodel/SecondTransferBLEData';
 import { TransferBLEData } from '../viewmodel/TransferBLEData';
 
 // 协议常量定义
@@ -105,8 +107,8 @@ class ProtocolPacket {
     }
 
     // 读取TLV长度 (大端序)
-    const lenBuffer = data.slice(3, 5);
-    const tlvLen = (lenBuffer[0] << 8) | lenBuffer[1];
+    const lenBuffer = buffer.alloc(2).fill(data.slice(3, 5));
+    const tlvLen = lenBuffer.readInt16LE();
 
     // 检查数据包完整性
     if (data.length < 5 + tlvLen) {
@@ -118,6 +120,15 @@ class ProtocolPacket {
     const tlvValue = data.slice(5, 5 + tlvLen);
     let result = new TransferBLEData(cmd, tlvValue, '', false);
     return result;
+  }
+
+  static decodeTlvValue(data: Uint8Array): SecondBLEData {
+    let tlvType = data[0];
+    // 读取TLV长度 (大端序)
+    const lenBuffer = buffer.alloc(2).fill(data.slice(1, 3));
+    const tlvLen = lenBuffer.readInt16LE();
+    const tlvValue = data.slice(3, 3 + tlvLen);
+    return new SecondBLEData(tlvType, tlvValue);
   }
 
   // 辅助方法：将Uint8Array转换为字符串
