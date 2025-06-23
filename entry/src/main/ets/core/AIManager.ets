@@ -39,7 +39,7 @@ export class AIManager {
     this.gattClient = gattClient;
     this.command.addDoubleCallback(this.doubleClickCallback)
 
-    this.realtimeASR.setTranscriptionCallback((result) => {
+    this.realtimeASR.addTranscriptionCallback((result) => {
       this.asrResult = result;
       Logger.info(TAG, `语音识别结果: ${result}`);
     })

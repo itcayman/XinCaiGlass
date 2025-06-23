@@ -4,7 +4,7 @@ import { Logger } from '../utils/Logger';
 import { CreateTeleprompterView } from '../view/CreateTeleprompterView';
 import { NewTeleprompterNavigationBar } from '../view/NewTeleprompterNavigationBar';
 import { emitter, systemDateTime } from '@kit.BasicServicesKit';
-import { TELEPROMPTER_ADD_SUCCESS } from '../utils/EventIds';
+import { TELEPROMPTER_ADD_SUCCESS } from '../constants/EventIds';
 import { router } from '@kit.ArkUI';
 
 const TAG: string = '[Page][TeleprompterEdit]'

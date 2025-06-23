@@ -1,7 +1,7 @@
 import { ble } from '@kit.ConnectivityKit';
 import { AsyncCallback, BusinessError, emitter } from '@kit.BasicServicesKit';
 import { isBlank } from '../utils/StringUtil';
-import { BLE_SCAN_ID as BLE_SCAN_ID } from '../utils/EventIds';
+import { BLE_SCAN_ID as BLE_SCAN_ID } from '../constants/EventIds';
 import { BleScanItem } from '../viewmodel/BleScanItem';
 import process from '@ohos.process';
 import { Logger } from '../utils/Logger';

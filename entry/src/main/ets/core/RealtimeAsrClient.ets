@@ -57,7 +57,7 @@ export class RealtimeAsrManager {
   private lastResultText = ''
   private pcm = new PCMManager();
   private onConnectSuccessCallback: Callback<void> | undefined;
-  private onTranscriptionCallback: Callback<string> | undefined;
+  private onTranscriptionCallback: Array<Callback<string>> = new Array();
 
   constructor() {
     this.initAudioProcessor();
@@ -81,8 +81,15 @@ export class RealtimeAsrManager {
     this.onConnectSuccessCallback = callback;
   }
 
-  public setTranscriptionCallback(callback: Callback<string> | undefined) {
-    this.onTranscriptionCallback = callback;
+  public addTranscriptionCallback(callback: Callback<string>) {
+    this.onTranscriptionCallback.push(callback);
+  }
+
+  public removeTranscriptionCallback(callback: Callback<string>) {
+    const index = this.onTranscriptionCallback.indexOf(callback);
+    if (index >= 0) {
+      this.onTranscriptionCallback.splice(index, 1);
+    }
   }
 
   public connect() {
@@ -127,7 +134,7 @@ export class RealtimeAsrManager {
         if (isBlank(transcriptionResult)) {
           return;
         }
-        transcriptionResult = transcriptionResult.replaceAll(RegExp("[,，.。！]", "g"), '|')
+        transcriptionResult = transcriptionResult.replaceAll(RegExp("[,，.。！\s]", "g"), '|')
         Logger.debug(TAG, `转化后结果: ${transcriptionResult}`)
         let text = transcriptionResult;
         if (transcriptionResult.indexOf('|') >= 0) {
@@ -144,7 +151,9 @@ export class RealtimeAsrManager {
         }
         this.lastResultText = text;
         Logger.debug(TAG, `最终识别结果:${text}`)
-        this.onTranscriptionCallback?.(text);
+        this.onTranscriptionCallback.forEach((item) => {
+          item(text);
+        })
         break;
       case 'conversation.item.input_audio_transcription.completed':
         Logger.debug(TAG, `服务端确认完成此次语音识别`)

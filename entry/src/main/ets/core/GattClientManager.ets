@@ -7,7 +7,7 @@ import {
   BLE_DEVICE_DISCONNECTED,
   BLE_DEVICE_DISCONNECTING,
   BLE_DEVICE_UNDEFINED
-} from '../utils/EventIds';
+} from '../constants/EventIds';
 import { TransferBLEData } from '../viewmodel/TransferBLEData';
 import { buffer } from '@kit.ArkTS';
 import ProtocolPacket from './ProtocolPacket';
@@ -68,6 +68,10 @@ export class GattClientManager {
     if (index >= 0) {
       this.audioDataCallback.splice(index, 1);
     }
+  }
+
+  public clearWaitingSendQueue() {
+    this.waitingSendQueue = new Array();
   }
 
   // 1. client端主动连接时调用
@@ -137,10 +141,11 @@ export class GattClientManager {
       this.gattClient.writeCharacteristicValue(this.normalSendCharacteristic!, ble.GattWriteType.WRITE, (err) => {
         if (err) {
           this.printErr('写入数据失败1', err as BusinessError);
+          Logger.error(TAG, `写入失败内容：${HexUtil.uint8ArrayToHexStr(dataPacket)}`);
+          this.waitingSendQueue.splice(this.waitingSendQueue.indexOf(data), 1);
           return;
         }
-        const index = this.waitingSendQueue.indexOf(data);
-        this.waitingSendQueue.splice(index, 1);
+        this.waitingSendQueue.splice(this.waitingSendQueue.indexOf(data), 1);
         Logger.debug(TAG, '写入数据成功, 当前队列长度:' + this.waitingSendQueue.length);
         let next = this.waitingSendQueue.splice(this.waitingSendQueue.length - 1, 1);
         if (next && next.length == 1) {
@@ -149,6 +154,7 @@ export class GattClientManager {
         }
       });
     } catch (err) {
+      this.waitingSendQueue.splice(this.waitingSendQueue.indexOf(data), 1);
       this.printErr('写入通知描述符失败2', err as BusinessError);
     }
   }

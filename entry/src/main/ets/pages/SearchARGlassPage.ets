@@ -2,7 +2,7 @@ import { ble } from '@kit.ConnectivityKit';
 import bleScanManager from '../core/BleScanManager';
 import { PermissionUtil } from '../utils/PermissionUtil';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
-import { BLE_DEVICE_CONNECTED, BLE_DEVICE_CONNECTING, BLE_SCAN_ID } from '../utils/EventIds';
+import { BLE_DEVICE_CONNECTED, BLE_DEVICE_CONNECTING, BLE_SCAN_ID } from '../constants/EventIds';
 import { CustomNavigationBar } from '../view/CustomNavigationBar';
 import { BleScanItem } from '../viewmodel/BleScanItem';
 import process from '@ohos.process';

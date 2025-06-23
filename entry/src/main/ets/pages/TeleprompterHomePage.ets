@@ -5,7 +5,7 @@ import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
 import { BusinessError, emitter, systemDateTime } from '@kit.BasicServicesKit';
 import { IconButton } from '../view/IconButton';
 import { PermissionUtil } from '../utils/PermissionUtil';
-import { TELEPROMPTER_ADD_SUCCESS } from '../utils/EventIds';
+import { TELEPROMPTER_ADD_SUCCESS } from '../constants/EventIds';
 import { Logger } from '../utils/Logger';
 import databaseManager from '../database/DatabaseManager';
 import { fileIo, picker } from '@kit.CoreFileKit';

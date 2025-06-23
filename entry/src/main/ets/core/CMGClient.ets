@@ -4,7 +4,7 @@ import { bundleManager, Context } from "@kit.AbilityKit";
 import { BluetoothManager } from "./BluetoothManager";
 import { isBlank } from "../utils/StringUtil";
 import { emitter } from "@kit.BasicServicesKit";
-import { BLE_SCAN_ID } from "../utils/EventIds";
+import { BLE_SCAN_ID } from "../constants/EventIds";
 import { BleScanItem } from "../viewmodel/BleScanItem";
 import { CommandManager } from "./CommandManager";
 import { AIManager } from "./AIManager";

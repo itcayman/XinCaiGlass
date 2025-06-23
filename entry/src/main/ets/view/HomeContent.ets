@@ -2,7 +2,7 @@
 import { router } from '@kit.ArkUI';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { PermissionUtil } from '../utils/PermissionUtil';
-import { BLE_DEVICE_CONNECTED, BLE_DEVICE_DISCONNECTED } from '../utils/EventIds';
+import { BLE_DEVICE_CONNECTED, BLE_DEVICE_DISCONNECTED } from '../constants/EventIds';
 import dateTimeManager from '../core/DateTimeManager';
 import { JhProgressHUD } from '../utils/JhProgressHUD';
 import { HomeGridItemView } from './HomeGridItemView';

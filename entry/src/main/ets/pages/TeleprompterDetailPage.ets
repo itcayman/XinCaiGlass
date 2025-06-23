@@ -16,11 +16,17 @@ import { DynamicIconButton } from '../view/DynamicIconButton';
 import measure from '@ohos.measure'
 import { isBlank } from '../utils/StringUtil';
 import cmgClient from '../core/CMGClient';
+import systemDateTime from '@ohos.systemDateTime';
+import { DynamicArrayBuffer } from '../viewmodel/DynamicArrayBuffer';
+import { StringChecker } from '../utils/StringChecker';
 
 // import router from '@ohos.router'
 const TAG: string = '[TeleprompterDetail]';
 //眼镜上一页对应的行数
-const LINES_PER_PAGE: number = 4;
+const LINES_PER_PAGE: number = 5;
+const COUNT_TO_LAST = 2;
+//最少匹配2个字
+const MIN_FILTER_CHARACTERS = 2;
 const LINE_HEIGHT = 25
 
 @Entry
@@ -46,6 +52,8 @@ struct TeleprompterDetailPage {
   @State private currentLineIndex: number = 0
   private timer: number | null = null
   private contentLines: Array<TeleprompterLine> = new Array()
+  private enterTimestamp = 0;
+  private audioCallback: Callback<ArrayBuffer> | undefined;
   private remoteControlCallback = (command: RemoteControl) => {
     Logger.warn(TAG, `收到遥控器按键: ${command}`);
     switch (command) {
@@ -54,8 +62,15 @@ struct TeleprompterDetailPage {
       case RemoteControl.RIGHT:
         break;
       case RemoteControl.PREV:
+        this.innerScrollLine(this.currentLineIndex - LINES_PER_PAGE);
         break;
       case RemoteControl.NEXT:
+        const current = systemDateTime.getTime();
+        if (current - this.enterTimestamp < 500) {
+          this.innerScrollLine(0);
+        } else {
+          this.innerScrollLine(this.currentLineIndex + LINES_PER_PAGE);
+        }
         break;
       case RemoteControl.ESC:
         break;
@@ -74,8 +89,12 @@ struct TeleprompterDetailPage {
         break;
     }
   };
+  private transcriptionCallback = (result: string) => {
+    this.afterGetTranscriptResult(result);
+  };
 
   aboutToAppear() {
+    this.enterTimestamp = systemDateTime.getTime();
     this.teleprompterData = router.getParams() as TeleprompterEntity
     Logger.log(TAG, this.teleprompterData.toString())
 
@@ -87,6 +106,7 @@ struct TeleprompterDetailPage {
     cmgClient.commandM().addRemoteControlCallback(this.remoteControlCallback);
     cmgClient.commandM().addDoubleCallback(this.doubleClickCallback);
     cmgClient.commandM().enterTeleprompterPage()
+    // this.innerScrollLine(0);
   }
 
   aboutToDisappear(): void {
@@ -94,18 +114,21 @@ struct TeleprompterDetailPage {
     cmgClient.commandM().removeRemoteControlCallback(this.remoteControlCallback);
     cmgClient.commandM().removeDoubleCallback(this.doubleClickCallback);
     cmgClient.commandM().enterHomePage();
-    cmgClient.realtimeAsrM().stopAudioCapture();
+    cmgClient.gattClientM().clearWaitingSendQueue();
+    // cmgClient.realtimeAsrM().stopAudioCapture();
     cmgClient.realtimeAsrM().setConnectSuccessCallback(undefined);
-    cmgClient.realtimeAsrM().setTranscriptionCallback(undefined);
+    this.stopSpeedScroll();
+    this.stopDynamicScroll();
   }
 
   private initRealtimeASR() {
+    JhProgressHUD.showLoadingText('加载中...')
     cmgClient.realtimeAsrM().setConnectSuccessCallback(() => {
-      cmgClient.realtimeAsrM().startAudioCapture();
+      // cmgClient.realtimeAsrM().startAudioCapture();
+      this._initGlassMic();
+      JhProgressHUD.hide();
     })
-    cmgClient.realtimeAsrM().setTranscriptionCallback((result) => {
-      this.afterGetTranscriptResult(result);
-    })
+    cmgClient.realtimeAsrM().addTranscriptionCallback(this.transcriptionCallback);
     PermissionUtil.init(getContext(this))
       .addPermissions('ohos.permission.MICROPHONE')
       .addPermissions('ohos.permission.INTERNET')
@@ -128,6 +151,9 @@ struct TeleprompterDetailPage {
 
   // 停止动态滚动控制
   private stopDynamicScroll() {
+    if (!this.isDynamicScrolling) {
+      return;
+    }
     this.isDynamicScrolling = false;
     this.btnDynamicScrollIcon = $r('app.media.ic_mic_on');
     this.btnDynamicScrollText = $r('app.string.teleprompter_dynamic_scroll');
@@ -136,6 +162,11 @@ struct TeleprompterDetailPage {
       cmgClient.realtimeAsrM().complete();
     }
     cmgClient.realtimeAsrM().reset();
+    cmgClient.commandM().closeMic();
+    cmgClient.realtimeAsrM().removeTranscriptionCallback(this.transcriptionCallback);
+    if (this.audioCallback) {
+      cmgClient.gattClientM().removeAudioCallback(this.audioCallback);
+    }
   }
 
   // 开始匀速滚动控制
@@ -164,6 +195,10 @@ struct TeleprompterDetailPage {
   }
 
   private innerScrollLine(lineNum: number) {
+    if (lineNum < 0 || lineNum >= this.contentLines.length) {
+      return;
+    }
+
     this.currentLineIndex = lineNum;
     let translationY = LINE_HEIGHT * lineNum
     Logger.log(TAG, `滚动到 ${lineNum} 行， y: ${translationY}`);
@@ -177,6 +212,26 @@ struct TeleprompterDetailPage {
       this.stopSpeedScroll()
     }
     this.sendTextToGlass();
+  }
+
+  private _initGlassMic() {
+    let buffer = new DynamicArrayBuffer();
+    let lastTime = systemDateTime.getTime();
+    this.audioCallback = (data: ArrayBuffer) => {
+      // Logger.info(TAG, '===============收到音频通知，数据长度:' + characteristic.characteristicValue.byteLength);\
+      let current = systemDateTime.getTime();
+      buffer.append(data);
+      if (current - lastTime >= 500) {
+        // Logger.info(TAG, `积累到100个包长度 ${buffer.length}，发送音频数据进行识别...`);
+        // Logger.info(TAG, `发送长度 ${buffer.length}，发送音频数据进行识别...`);
+        cmgClient.realtimeAsrM().sendAudioData(buffer.getBuffer());
+        buffer = new DynamicArrayBuffer();
+        lastTime = current;
+      }
+      // this.pcm.writePCMData(data);
+    }
+    cmgClient.gattClientM().addAudioCallback(this.audioCallback);
+    cmgClient.commandM().openMic();
   }
 
   /**
@@ -254,17 +309,26 @@ struct TeleprompterDetailPage {
    * @param result 通过语音流识别到的文本内容
    * */
   private afterGetTranscriptResult(result: string) {
+    Logger.info(TAG, `待查找【${result}】...`);
     if (!isBlank(result) && result.length == 1) {
       Logger.info(TAG, `return: ${result}`);
       return;
     }
+    if (this.currentLineIndex + LINES_PER_PAGE >= this.contentLines.length) {
+      Logger.warn(TAG, '已经到最后一页了，不需要再滚动');
+      return;
+    }
     let lastLine = this.currentLineIndex + LINES_PER_PAGE;
     // Logger.info(TAG, `lastLine: ${lastLine}`);
-    for (let i = this.currentLineIndex; i < lastLine; i++) {
+    for (let i = this.currentLineIndex + (LINES_PER_PAGE - COUNT_TO_LAST); i < lastLine; i++) {
       let lineText = this.contentLines[i].text;
       let findSuccess = lineText.indexOf(result) >= 0;
-      // Logger.info(TAG, `line: ${i}, text: ${lineText}, findSuccess: ${findSuccess}}`);
-      if (findSuccess && i > this.currentLineIndex) {
+      if (!findSuccess && result.length >= 3) {
+        findSuccess = StringChecker.hasConsecutiveChars(result, lineText);
+      }
+      Logger.info(TAG, `line: ${i}, text: ${lineText}, findSuccess: ${findSuccess}}`);
+      // if (findSuccess && (i - this.currentLineIndex) >= (LINES_PER_PAGE - COUNT_TO_LAST)) {
+      if (findSuccess) {
         Logger.info(TAG, `语音识别到当前行数: ${i}`);
         this.innerScrollLine(i);
         return;
@@ -300,7 +364,7 @@ struct TeleprompterDetailPage {
               .fontColor('#343434')
               .fontSize(16)// .fontFamily('kaishu')
               .lineHeight(LINE_HEIGHT)
-              .padding({ left: 35, right: 35 })
+              .padding({ left: 25, right: 25 })
               .width('100%')
               .onAreaChange(() => {
                 this.onTextAreaChanged();
