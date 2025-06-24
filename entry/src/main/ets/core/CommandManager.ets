@@ -136,7 +136,8 @@ export class CommandManager {
    * 提词器滚动题词
    * */
   public scrollTeleprompterText(sendText: string) {
-    let data: TransferBLEData = new TransferBLEData(Command.SET_TELEPROMPTER, sendText, '');
+    Logger.info(TAG, `滚动提词器，长度: ${sendText.length}`)
+    let data: TransferBLEData = new TransferBLEData(Command.SET_TELEPROMPTER, sendText, '', false, true);
     this.gattClient.sendNormalData(data)
   }
 
@@ -163,7 +164,7 @@ export class CommandManager {
    * */
   public sendAIResponse(sendText: string) {
     Logger.info(TAG, '发送AI结果:' + sendText);
-    let data: TransferBLEData = new TransferBLEData(Command.SEND_AI, sendText, '');
+    let data: TransferBLEData = new TransferBLEData(Command.SEND_AI, sendText, '', false, true);
     this.gattClient.sendNormalData(data)
   }
 

@@ -139,6 +139,18 @@
     {
       "name": "ai_wait_answer",
       "value": "I'm thinking..."
+    },
+    {
+      "name": "state_connecting",
+      "value": "Connecting..."
+    },
+    {
+      "name": "state_connected",
+      "value": "Connected"
+    },
+    {
+      "name": "state_disconnect",
+      "value": "Disconnect"
     }
   ]
 }

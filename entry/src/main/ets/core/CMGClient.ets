@@ -10,6 +10,11 @@ import { CommandManager } from "./CommandManager";
 import { AIManager } from "./AIManager";
 import { RealtimeAsrManager } from "./RealtimeAsrClient";
 import { GattClientManager } from "./GattClientManager";
+import {
+  BLE_DEVICE_CONNECTED,
+  BLE_DEVICE_CONNECTING,
+  BLE_DEVICE_DISCONNECTED as BLE_DEVICE_DISCONNECT
+} from "../constants/EventIds";
 
 const DEVICE_NAME_FILTER = 'CMG_Y01_0001'
 
@@ -71,6 +76,15 @@ export class CMGClient {
   private initSoftwareInfo() {
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       this.glassDevice.softwareVersion = bundleInfo.versionName;
+    })
+  }
+
+  private initListeners() {
+    emitter.on({ eventId: BLE_DEVICE_DISCONNECT }, () => {
+    })
+    emitter.on({ eventId: BLE_DEVICE_CONNECTING }, () => {
+    })
+    emitter.on({ eventId: BLE_DEVICE_CONNECTED }, () => {
     })
   }
 }

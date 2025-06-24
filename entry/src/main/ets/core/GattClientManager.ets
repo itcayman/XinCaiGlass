@@ -50,7 +50,8 @@ export class GattClientManager {
   private waitWriteNotifyArray: Array<Notify> = new Array();
   private connectState: ble.ProfileConnectionState = constant.ProfileConnectionState.STATE_DISCONNECTED;
   private found: boolean = false;
-  private waitingSendQueue: Array<TransferBLEData> = new Array();
+  private isWritingCharacteristicData = false; //正在写入数据
+  private waitingSendQueue: Array<Uint8Array> = new Array();
   private receiverDataCallback: Callback<TransferBLEData> | undefined;
   private audioDataCallback: Array<Callback<ArrayBuffer>> = new Array();
   private retryConnectCount = 0;
@@ -68,10 +69,6 @@ export class GattClientManager {
     if (index >= 0) {
       this.audioDataCallback.splice(index, 1);
     }
-  }
-
-  public clearWaitingSendQueue() {
-    this.waitingSendQueue = new Array();
   }
 
   // 1. client端主动连接时调用
@@ -119,6 +116,20 @@ export class GattClientManager {
   }
 
   public sendNormalData(data: TransferBLEData) {
+    let dataPacket = ProtocolPacket.createPacket(data);
+    dataPacket.forEach((item) => {
+      this.waitingSendQueue.push(item);
+      Logger.warn(TAG, 'push包:' + item.byteLength);
+    })
+    if (this.isWritingCharacteristicData) {
+      Logger.warn(TAG, '当前正在发送数据!!!');
+      return;
+    }
+    Logger.debug(TAG, '发送送消息,当前队列长度:' + this.waitingSendQueue.length);
+    this._writeCharacteristicValue(this.waitingSendQueue[0]);
+  }
+
+  private _writeCharacteristicValue(data: Uint8Array) {
     if (!this.gattClient || this.connectState != constant.ProfileConnectionState.STATE_CONNECTED) {
       Logger.error(TAG, 'gattClient未连接');
       return;
@@ -127,35 +138,34 @@ export class GattClientManager {
       Logger.error(TAG, '相关服务、特征值、描述符校验失败!!!');
       return;
     }
-
-    if (this.waitingSendQueue.length > 0) {
-      this.waitingSendQueue.push(data);
-      Logger.warn(TAG, '正在写入数据，加入等待队列...');
-      return;
-    }
-    this.waitingSendQueue.push(data);
-    let dataPacket: Uint8Array = ProtocolPacket.createPacket(data)
-    this.normalSendCharacteristic!.characteristicValue = buffer.from(dataPacket).buffer
-    // Logger.debug(TAG, '通用服务开始写入数据:' + ProtocolPacket.toHexString(dataPacket));
+    // Logger.warn(TAG, '写入数据:'+HexUtil.uint8ArrayToHexStr(data));
     try {
+      this.isWritingCharacteristicData = true;
+      this.normalSendCharacteristic!.characteristicValue = buffer.from(data).buffer
       this.gattClient.writeCharacteristicValue(this.normalSendCharacteristic!, ble.GattWriteType.WRITE, (err) => {
         if (err) {
           this.printErr('写入数据失败1', err as BusinessError);
-          Logger.error(TAG, `写入失败内容：${HexUtil.uint8ArrayToHexStr(dataPacket)}`);
+          this.isWritingCharacteristicData = false;
           this.waitingSendQueue.splice(this.waitingSendQueue.indexOf(data), 1);
+          Logger.error(TAG, `写入失败数据长度: ${data.byteLength}`);
           return;
         }
-        this.waitingSendQueue.splice(this.waitingSendQueue.indexOf(data), 1);
+        const index = this.waitingSendQueue.indexOf(data);
+        this.waitingSendQueue.splice(index, 1);
         Logger.debug(TAG, '写入数据成功, 当前队列长度:' + this.waitingSendQueue.length);
-        let next = this.waitingSendQueue.splice(this.waitingSendQueue.length - 1, 1);
+        let next = this.waitingSendQueue.splice(0, 1);
         if (next && next.length == 1) {
           Logger.debug(TAG, '发送下一个数据包');
-          this.sendNormalData(next[0]);
+          this._writeCharacteristicValue(next[0]);
+        } else {
+          this.isWritingCharacteristicData = false;
         }
       });
     } catch (err) {
-      this.waitingSendQueue.splice(this.waitingSendQueue.indexOf(data), 1);
+      this.isWritingCharacteristicData = false;
       this.printErr('写入通知描述符失败2', err as BusinessError);
+      this.waitingSendQueue.splice(this.waitingSendQueue.indexOf(data), 1);
+      Logger.error(TAG, `写入失败数据长度: ${data.byteLength}`);
     }
   }
 

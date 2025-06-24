@@ -142,15 +142,21 @@ export class RealtimeAsrManager {
           // Logger.debug(TAG, `splits length:${splits.length},splits: ${splits}`);
           text = splits[Math.max(splits.length - 1, 0)];
           // Logger.debug(TAG, `text: ${text}`);
+          // 进行一次容错处理
+          if (isBlank(text)) {
+            text = splits[Math.max(splits.length - 2, 0)];
+          }
         }
         if (text == 'undefined' || isBlank(text)) {
+          Logger.warn(TAG, '结果为undefiled或者为空')
           return;
         }
         if (this.lastResultText == text) {
+          Logger.warn(TAG, `与上一个结果相同：【${text}】`)
           return;
         }
         this.lastResultText = text;
-        Logger.debug(TAG, `最终识别结果:${text}`)
+        Logger.warn(TAG, `最终识别结果:${text}`)
         this.onTranscriptionCallback.forEach((item) => {
           item(text);
         })

@@ -3,6 +3,7 @@ import { Logger } from '../utils/Logger';
 import { SecondTransferBLEData as SecondBLEData } from '../viewmodel/SecondTransferBLEData';
 import { TransferBLEData } from '../viewmodel/TransferBLEData';
 
+const TAG = '[Packet]'
 // 协议常量定义
 const PROTOCOL_HEADER = 0x01;
 const FIXED_TLV_TYPE = 0x80;
@@ -22,16 +23,68 @@ const SECOND_TLV_TYPE_COMMON = 0x01; //第二层通用tlv_type
 class ProtocolPacket {
   public static createPacket(data: TransferBLEData) {
     if (typeof data.tlvValue === 'string') {
-      return ProtocolPacket.createTextPacket(data.cmd, data.tlvValue)
+      if (data.longText) {
+        return ProtocolPacket.createLongTextPacket(data.cmd, data.tlvValue);
+      }
+      return ProtocolPacket.createTextPacket(data.cmd, data.tlvValue);
     } else if (!data.wrapperData) {
-      return ProtocolPacket.createUintArrayPacketNoWrapper(data.cmd, FIXED_TLV_TYPE, data.tlvValue);
+      return ProtocolPacket.createNoWrapperPacket(data.cmd, FIXED_TLV_TYPE, data.tlvValue);
     } else {
-      return ProtocolPacket.createUintArrayPacket(data.cmd, data.tlvType, data.tlvValue);
+      const tlvPacket = ProtocolPacket.createTLVPacket(data.tlvValue, data.tlvType);
+      return ProtocolPacket.createWrapperPacket(data.cmd, tlvPacket);
     }
   }
 
-  private static createUintArrayPacketNoWrapper(cmd: number, tlvType: number = FIXED_TLV_TYPE,
-    tlvValue: Uint8Array): Uint8Array {
+  public static createLongTextPacket(cmd: number, text: string): Array<Uint8Array> {
+    const chunks: Array<Uint8Array> = new Array();
+    const textData = new Uint8Array(buffer.from(text, 'utf-8').buffer);
+    Logger.debug(TAG, `文本字节长度: ${textData.byteLength}`);
+    if (textData.byteLength <= 200) {
+      const messageBytes = ProtocolPacket.concatUint8Arrays([new Uint8Array([0x5a, 0x6b]), textData]);
+      let result = ProtocolPacket.createWrapperPacket(cmd, ProtocolPacket.createTLVPacket(messageBytes));
+      result.forEach((item) => {
+        chunks.push(item);
+      })
+      return chunks;
+    }
+    const maxChunkSize = 200;
+    const leaderPacketHeader = new Uint8Array([0x5A, 0x5A]);
+    const terminalPacketHeader = new Uint8Array([0x6B, 0x6B]);
+    const segmentPacketHeader = new Uint8Array([0x7C, 0x7C]);
+    let offset = 0;
+    while (offset < textData.byteLength) {
+      let end = Math.min(offset + maxChunkSize, textData.byteLength);
+      chunks.push(textData.slice(offset, end));
+      offset = end;
+    }
+    for(let i = 0;i< chunks.length;i++) {
+      let payload: ArrayBuffer;
+      let chunk = chunks[i];
+      if (i == 0) {
+        payload = ProtocolPacket.createTLVPacket(ProtocolPacket.concatUint8Arrays([leaderPacketHeader, chunk]));
+      } else if (i == chunks.length - 1) {
+        payload = ProtocolPacket.createTLVPacket(ProtocolPacket.concatUint8Arrays([terminalPacketHeader, chunk]));
+      } else {
+        payload = ProtocolPacket.createTLVPacket(ProtocolPacket.concatUint8Arrays([segmentPacketHeader, chunk]));
+      }
+      chunks[i] = ProtocolPacket.createWrapperPacket(cmd, payload)[0];
+    }
+    // chunks.map((chunk, index) => {
+    //   let payload: ArrayBuffer;
+    //   if (index == 0) {
+    //     payload = ProtocolPacket.createTLVPacket(ProtocolPacket.concatUint8Arrays([leaderPacketHeader, chunk]));
+    //   } else if (index == chunks.length - 1) {
+    //     payload = ProtocolPacket.createTLVPacket(ProtocolPacket.concatUint8Arrays([terminalPacketHeader, chunk]));
+    //   } else {
+    //     payload = ProtocolPacket.createTLVPacket(ProtocolPacket.concatUint8Arrays([segmentPacketHeader, chunk]));
+    //   }
+    //   ProtocolPacket.createWrapperPacket(cmd, payload)[0];
+    // });
+    return chunks;
+  }
+
+  private static createNoWrapperPacket(cmd: number, tlvType: number = FIXED_TLV_TYPE,
+    tlvValue: Uint8Array): Array<Uint8Array> {
     const tlvLen = buffer.alloc(2);
     tlvLen.writeInt16LE(tlvValue?.length, 0);
     // 创建第二层数据包
@@ -42,10 +95,10 @@ class ProtocolPacket {
       tlvLen,
       buffer.from(tlvValue)
     ]);
-    return new Uint8Array(packet.buffer);
+    return [new Uint8Array(packet.buffer)];
   }
 
-  private static wrapperPacket(cmd: number, tlvValue: Uint8Array | ArrayBuffer): Uint8Array {
+  private static createWrapperPacket(cmd: number, tlvValue: Uint8Array | ArrayBuffer): Array<Uint8Array> {
     const tlvLen = buffer.alloc(2);
     tlvLen.writeInt16LE(tlvValue.byteLength, 0);
     // 创建完整数据包
@@ -56,10 +109,10 @@ class ProtocolPacket {
       tlvLen,
       buffer.from(tlvValue)
     ]);
-    return new Uint8Array(packet.buffer);
+    return [new Uint8Array(packet.buffer)];
   }
 
-  private static createTextPacket(cmd: number, text: string): Uint8Array {
+  private static createTextPacket(cmd: number, text: string): Array<Uint8Array> {
     let tlvValue = new Uint8Array(buffer.from(text, 'utf-8').buffer);
     const tlvLen = buffer.alloc(2);
     tlvLen.writeInt16LE(tlvValue?.length, 0);
@@ -69,11 +122,11 @@ class ProtocolPacket {
       tlvLen,
       buffer.from(tlvValue)
     ]);
-    return ProtocolPacket.wrapperPacket(cmd, packet.buffer);
+    return ProtocolPacket.createWrapperPacket(cmd, packet.buffer);
   }
 
-  private static createUintArrayPacket(cmd: number, tlvType: number = SECOND_TLV_TYPE_COMMON,
-    tlvValue: Uint8Array): Uint8Array {
+  private static createTLVPacket(tlvValue: Uint8Array,
+    tlvType: number = SECOND_TLV_TYPE_COMMON): ArrayBuffer {
     const tlvLen = buffer.alloc(2);
     tlvLen.writeInt16LE(tlvValue?.length, 0);
     // 创建第二层数据包
@@ -82,7 +135,7 @@ class ProtocolPacket {
       tlvLen,
       buffer.from(tlvValue)
     ]);
-    return ProtocolPacket.wrapperPacket(cmd, packet.buffer);
+    return packet.buffer;
   }
 
   // 解析数据包
@@ -146,6 +199,26 @@ class ProtocolPacket {
     return Array.from(data)
       .map(byte => byte.toString(16).padStart(2, '0'))
       .join(' ');
+  }
+
+  private static concatUint8Arrays(arrays: Array<Uint8Array>): Uint8Array {
+    // 计算总长度
+    let totalLength = 0;
+    for (let i = 0; i < arrays.length; i++) {
+      totalLength += arrays[i].length;
+    }
+    // 创建结果数组
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    // 复制每个数组的内容
+    for (let i = 0; i < arrays.length; i++) {
+      const array = arrays[i];
+      for (let j = 0; j < array.length; j++) {
+        result[offset + j] = array[j];
+      }
+      offset += array.length;
+    }
+    return result;
   }
 }
 

@@ -48,8 +48,11 @@ struct TeleprompterDetailPage {
   private contentController: TextController = new TextController();
   @State navHeight: number = 0;
   @State teleprompterData: TeleprompterEntity = new TeleprompterEntity(0, '', '', 0)
-  //当前所在行数索引
-  @State private currentLineIndex: number = 0
+  //当前显示页对应行的索引
+  @State private currentPageFirstLineIndex: number = 0
+  //当前正在朗读行的索引
+  private currentReadLineIndex = 0
+  private lastScrolledY = -1
   private timer: number | null = null
   private contentLines: Array<TeleprompterLine> = new Array()
   private enterTimestamp = 0;
@@ -62,14 +65,14 @@ struct TeleprompterDetailPage {
       case RemoteControl.RIGHT:
         break;
       case RemoteControl.PREV:
-        this.innerScrollLine(this.currentLineIndex - LINES_PER_PAGE);
+        this.innerScrollLine(this.currentPageFirstLineIndex - LINES_PER_PAGE);
         break;
       case RemoteControl.NEXT:
         const current = systemDateTime.getTime();
         if (current - this.enterTimestamp < 500) {
           this.innerScrollLine(0);
         } else {
-          this.innerScrollLine(this.currentLineIndex + LINES_PER_PAGE);
+          this.innerScrollLine(this.currentPageFirstLineIndex + LINES_PER_PAGE);
         }
         break;
       case RemoteControl.ESC:
@@ -114,7 +117,7 @@ struct TeleprompterDetailPage {
     cmgClient.commandM().removeRemoteControlCallback(this.remoteControlCallback);
     cmgClient.commandM().removeDoubleCallback(this.doubleClickCallback);
     cmgClient.commandM().enterHomePage();
-    cmgClient.gattClientM().clearWaitingSendQueue();
+    // cmgClient.gattClientM().clearWaitingSendQueue();
     // cmgClient.realtimeAsrM().stopAudioCapture();
     cmgClient.realtimeAsrM().setConnectSuccessCallback(undefined);
     this.stopSpeedScroll();
@@ -177,7 +180,7 @@ struct TeleprompterDetailPage {
       this.btnSpeedScrollIcon = $r('app.media.ic_public_pause_norm')
       this.btnSpeedScrollText = $r("app.string.teleprompter_stop_scroll")
       this.timer = setInterval(() => {
-        this.innerScrollLine(this.currentLineIndex + LINES_PER_PAGE)
+        this.innerScrollLine(this.currentPageFirstLineIndex + LINES_PER_PAGE)
       }, 5000)
     }
   }
@@ -199,7 +202,7 @@ struct TeleprompterDetailPage {
       return;
     }
 
-    this.currentLineIndex = lineNum;
+    this.currentPageFirstLineIndex = lineNum;
     let translationY = LINE_HEIGHT * lineNum
     Logger.log(TAG, `滚动到 ${lineNum} 行， y: ${translationY}`);
     this.scrollerForScroll.scrollTo({
@@ -239,8 +242,8 @@ struct TeleprompterDetailPage {
    * */
   private sendTextToGlass() {
     let sendText = '';
-    let targetIndex = LINES_PER_PAGE + this.currentLineIndex;
-    for (let i = this.currentLineIndex; i < targetIndex && i < this.contentLines.length; i++) {
+    let targetIndex = LINES_PER_PAGE + this.currentPageFirstLineIndex;
+    for (let i = this.currentPageFirstLineIndex; i < targetIndex && i < this.contentLines.length; i++) {
       sendText += this.contentLines[i].text + '\n'
     }
     cmgClient.commandM().scrollTeleprompterText(sendText)
@@ -295,8 +298,11 @@ struct TeleprompterDetailPage {
 
   private afterScroll() {
     let scrolledY = this.scrollerForScroll.currentOffset().yOffset;
+    if(this.lastScrolledY == scrolledY) {
+      return;
+    }
+    this.lastScrolledY = scrolledY;
     if (scrolledY % LINE_HEIGHT == 0) {
-      this.sendTextToGlass();
       return;
     }
     let targetLineNum = Math.floor(scrolledY / LINE_HEIGHT);
@@ -309,28 +315,31 @@ struct TeleprompterDetailPage {
    * @param result 通过语音流识别到的文本内容
    * */
   private afterGetTranscriptResult(result: string) {
-    Logger.info(TAG, `待查找【${result}】...`);
+    Logger.info(TAG, `当前页第一行索引是【${this.currentPageFirstLineIndex}】待查找【${result}】...`);
     if (!isBlank(result) && result.length == 1) {
       Logger.info(TAG, `return: ${result}`);
       return;
     }
-    if (this.currentLineIndex + LINES_PER_PAGE >= this.contentLines.length) {
+    if (this.currentPageFirstLineIndex + LINES_PER_PAGE >= this.contentLines.length) {
       Logger.warn(TAG, '已经到最后一页了，不需要再滚动');
       return;
     }
-    let lastLine = this.currentLineIndex + LINES_PER_PAGE;
+    let lastLine = this.currentPageFirstLineIndex + LINES_PER_PAGE;
     // Logger.info(TAG, `lastLine: ${lastLine}`);
-    for (let i = this.currentLineIndex + (LINES_PER_PAGE - COUNT_TO_LAST); i < lastLine; i++) {
+    for (let i = this.currentReadLineIndex; i < lastLine; i++) {
       let lineText = this.contentLines[i].text;
       let findSuccess = lineText.indexOf(result) >= 0;
+      //没有完全匹配的情况下，需要看里面是否有3个字符匹配
       if (!findSuccess && result.length >= 3) {
         findSuccess = StringChecker.hasConsecutiveChars(result, lineText);
       }
       Logger.info(TAG, `line: ${i}, text: ${lineText}, findSuccess: ${findSuccess}}`);
-      // if (findSuccess && (i - this.currentLineIndex) >= (LINES_PER_PAGE - COUNT_TO_LAST)) {
       if (findSuccess) {
-        Logger.info(TAG, `语音识别到当前行数: ${i}`);
-        this.innerScrollLine(i);
+        this.currentReadLineIndex = i;
+        Logger.info(TAG, `语音识别到当前行数: 【${i}】 对应内容:【${this.contentLines[i].text}】`);
+        if (i - this.currentPageFirstLineIndex >= LINES_PER_PAGE - COUNT_TO_LAST) {
+          this.innerScrollLine(i);
+        }
         return;
       }
     }
@@ -364,7 +373,7 @@ struct TeleprompterDetailPage {
               .fontColor('#343434')
               .fontSize(16)// .fontFamily('kaishu')
               .lineHeight(LINE_HEIGHT)
-              .padding({ left: 25, right: 25 })
+              .padding({ left: 15, right: 15 })
               .width('100%')
               .onAreaChange(() => {
                 this.onTextAreaChanged();

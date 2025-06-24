@@ -67,11 +67,13 @@ export class AIManager {
       }
       this.pcm.writePCMData(data);
     }
-    this.gattClient.addAudioCallback(this.audioCallback);
+    // this.gattClient.addAudioCallback(this.audioCallback);
     this.command.enterAIPage();
-    this.command.openMic();
-    // this.asrResult = '南昌今天天气怎么样';
-    // this.askAI();
+    // this.command.openMic();
+    setTimeout(()=>{
+      this.command.sendAIResponse('今天（2025 年 6 月 20 日）南昌天气阴，气温 26℃到 33℃，西南风 1 级，东南风 1 级，湿度 78%。这样的天气很适合进行一些室内活动或者在傍晚时分外出散步呢，希望你能享受这一天的时光～');
+      // this.command.sendAIResponse('今天（2025 年 6 月 20 日）南昌天气阴，气温 26℃到 33℃，');
+    }, 2000);
   }
 
   private stopGlassAI() {
