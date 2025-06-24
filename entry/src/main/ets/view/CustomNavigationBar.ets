@@ -6,12 +6,14 @@ import { common } from '@kit.AbilityKit';
 export struct CustomNavigationBar {
   @State private statusBarHeight: number = 24 // 默认值(vp)
   @State private navHeight: number = 44
-  @State parTitle: string|Resource = ''
+  @State parTitle: string | Resource = ''
   @State parBGColor: Color = Color.White
+  moreRes: Resource | undefined;
   @LocalStorageProp('isLandScape') isLandScape: boolean = false;
   @LocalStorageProp('isDevice2in1') isDevice2in1: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
   onHeightChange?: (height: number) => void
+  moreClickCallback?: () => void
 
   aboutToAppear() {
     DevicesUtil.getStatusBarHeight(this.context).then(height => {
@@ -22,7 +24,7 @@ export struct CustomNavigationBar {
 
   build() {
     Column() {
-      Row({space: 0}) {
+      Row({ space: 0 }) {
         Button({ type: ButtonType.Circle }) {
           Image($r('app.media.hwid_next_ic_appback'))
             .backgroundColor(Color.Transparent)
@@ -35,7 +37,6 @@ export struct CustomNavigationBar {
             .fillColor($r('sys.color.ohos_id_color_titlebar_icon'))
             .matchTextDirection(true)
         }
-        .alignSelf(ItemAlign.Start)
         .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
         .borderRadius(20)
         .width(40)
@@ -54,6 +55,19 @@ export struct CustomNavigationBar {
           .fontSize($r('sys.float.ohos_id_text_size_headline8'))
           .fontWeight(FontWeight.Bold)
           .padding({ left: 8 })
+          .alignRules({
+            left: { anchor: 'personalInfoBackPressButton', align: HorizontalAlign.End },
+            center: { anchor: '__container__', align: VerticalAlign.Center }
+          })
+
+        if (this.moreRes) {
+          Column() {
+            Image(this.moreRes)
+              .height('25vp')
+              .margin({ right: 15 })
+              .onClick(this.moreClickCallback)
+          }.layoutWeight(1).alignItems(HorizontalAlign.End)
+        }
       }
     }
     .width('100%')

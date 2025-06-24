@@ -6,6 +6,7 @@
     "pages/TeleprompterEditPage",
     "pages/TeleprompterDetailPage",
     "pages/TestTextPage",
-    "pages/PcmFileWriter"
+    "pages/PcmFileWriter",
+    "pages/TeleprompterSettingPage"
   ]
 }

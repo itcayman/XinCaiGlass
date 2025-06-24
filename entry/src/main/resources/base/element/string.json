@@ -57,6 +57,30 @@
       "value":"Intellisense"
     },
     {
+      "name": "teleprompter_setting",
+      "value":"Teleprompter Setting"
+    },
+    {
+      "name": "teleprompter_setting_speed_desc",
+      "value":"Teleprompter Speed"
+    },
+    {
+      "name": "teleprompter_setting_speed1",
+      "value":"Low (20s / Page)"
+    },
+    {
+      "name": "teleprompter_setting_speed2",
+      "value":"Middle (15s / Page)"
+    },
+    {
+      "name": "teleprompter_setting_speed3",
+      "value":"High (10s / Page)"
+    },
+    {
+      "name": "teleprompter_setting_message_desc",
+      "value":"Receive messages when teleprompter"
+    },
+    {
       "name": "meeting_assistant",
       "value":"Meeting Assistant"
     },

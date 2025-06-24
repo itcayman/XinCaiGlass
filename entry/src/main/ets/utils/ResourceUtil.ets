@@ -47,12 +47,7 @@ export class ResourceUtil {
   /**
    * Common border radius list.
    */
-  private static commonBorderRadius: Resource[] = [$r('app.float.common_border_radius_1'),
-    $r('app.float.common_border_radius_2'), $r('app.float.common_border_radius_3'),
-    $r('app.float.common_border_radius_4'), $r('app.float.common_border_radius_5'),
-    $r('app.float.common_border_radius_6'), $r('app.float.common_border_radius_7'),
-    $r('app.float.common_border_radius_8'), $r('app.float.common_border_radius_9'),
-    $r('app.float.common_border_radius_10')];
+  private static commonBorderRadius: Resource = $r('app.float.common_border_radius_3')
   /**
    * Common padding size list.
    */
@@ -92,7 +87,7 @@ export class ResourceUtil {
     return ResourceUtil.commonDividerColor;
   }
 
-  static getCommonBorderRadius(): Resource[] {
+  static getCommonBorderRadius(): Resource {
     return ResourceUtil.commonBorderRadius;
   }
 

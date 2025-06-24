@@ -15,11 +15,13 @@ import {
   BLE_DEVICE_CONNECTING,
   BLE_DEVICE_DISCONNECTED as BLE_DEVICE_DISCONNECT
 } from "../constants/EventIds";
+import { TeleprompterConfig } from "../viewmodel/config/TeleprompterConfig";
 
 const DEVICE_NAME_FILTER = 'CMG_Y01_0001'
 
 export class CMGClient {
   private glassDevice: CMGDeviceInfo = new CMGDeviceInfo();
+  private teleprompterConfig: TeleprompterConfig = new TeleprompterConfig();
   private localData: LocalDataManager = new LocalDataManager();
   private bluetooth: BluetoothManager = new BluetoothManager();
   private realtimeASR = new RealtimeAsrManager();
@@ -53,6 +55,14 @@ export class CMGClient {
 
   public gattClientM(): GattClientManager {
     return this.gattClient;
+  }
+
+  public teleprompterC(): TeleprompterConfig {
+    return this.teleprompterConfig;
+  }
+
+  public updateTeleprompterConfig(config: TeleprompterConfig) {
+    this.teleprompterConfig = config;
   }
 
   public findDevice() {

@@ -1,6 +1,9 @@
 import { TimeUtil } from '../utils/TimeUtil';
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
+import { CommonConstants } from '../constants/CommonConstants';
+import ResponseResult from '../network/ResponseResult';
+import { ResourceUtil } from '../utils/ResourceUtil';
 
 @Preview
 @Component
@@ -37,7 +40,7 @@ export struct TeleprompterItemView {
         .align(Alignment.End)
     }.width('100%')
     .padding(10)
-    .borderRadius(5)
+    .borderRadius(ResourceUtil.getCommonBorderRadius())
     .backgroundColor(Color.White)
   }
 }

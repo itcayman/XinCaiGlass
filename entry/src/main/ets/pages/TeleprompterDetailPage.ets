@@ -98,7 +98,6 @@ struct TeleprompterDetailPage {
   private transcriptionCallback = (result: string) => {
     this.afterGetTranscriptResult(result);
   };
-
   private onTeleprompterEditDone = (eventData: emitter.EventData) => {
     let target: TeleprompterEntity = eventData?.data?.Teleprompter;
     Logger.debug(TAG, `收到回调 id=${target.id}, title=${target.title}, timestamp=${target.timestamp}`);
@@ -204,7 +203,7 @@ struct TeleprompterDetailPage {
       this.btnSpeedScrollText = $r("app.string.teleprompter_stop_scroll")
       this.timer = setInterval(() => {
         this.innerScrollLine(this.currentPageFirstLineIndex + LINES_PER_PAGE)
-      }, 5000)
+      }, cmgClient.teleprompterC().scrollOnePageSeconds * 1000)
     }
   }
 
@@ -292,6 +291,9 @@ struct TeleprompterDetailPage {
       this.startSpeedScroll();
     }
   }
+  private btnMoreClickEvent = () => {
+    router.pushUrl({ url: 'pages/TeleprompterSettingPage' })
+  }
 
   private onTextAreaChanged() {
     let layoutManager: LayoutManager = this.contentController.getLayoutManager();
@@ -370,7 +372,12 @@ struct TeleprompterDetailPage {
 
   build() {
     RelativeContainer() {
-      CustomNavigationBar({ parTitle: $r("app.string.teleprompter"), parBGColor: Color.White }).alignRules({
+      CustomNavigationBar({
+        parTitle: $r("app.string.teleprompter"),
+        parBGColor: Color.White,
+        moreRes: $r('app.media.ic_setting'),
+        moreClickCallback: this.btnMoreClickEvent
+      }).alignRules({
         top: { anchor: '__container__', align: VerticalAlign.Top }
       }).id('navigationBar')
 
