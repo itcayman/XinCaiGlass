@@ -5,7 +5,7 @@ import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
 import { BusinessError, emitter, systemDateTime } from '@kit.BasicServicesKit';
 import { IconButton } from '../view/IconButton';
 import { PermissionUtil } from '../utils/PermissionUtil';
-import { TELEPROMPTER_ADD_SUCCESS } from '../constants/EventIds';
+import { TELEPROMPTER_EDIT_SUCCESS as TELEPROMPTER_EDIT_SUCCESS } from '../constants/EventIds';
 import { Logger } from '../utils/Logger';
 import databaseManager from '../database/DatabaseManager';
 import { fileIo, picker } from '@kit.CoreFileKit';
@@ -22,27 +22,39 @@ struct TeleprompterHomePage {
   @State title: string = '提词器';
   @State navHeight: number = 0;
   @State data: Array<TeleprompterEntity> = [
-    new TeleprompterEntity(0, "测试内容1", this.context.resourceManager.getStringSync($r('app.string.tets0').id),
-      systemDateTime.getTime()),
-    new TeleprompterEntity(-1, "测试内容2", this.context.resourceManager.getStringSync($r('app.string.tets1').id),
-      systemDateTime.getTime())
+  // new TeleprompterEntity(0, "测试内容1", this.context.resourceManager.getStringSync($r('app.string.tets0').id),
+  //   systemDateTime.getTime()),
+  // new TeleprompterEntity(-1, "测试内容2", this.context.resourceManager.getStringSync($r('app.string.tets1').id),
+  //   systemDateTime.getTime())
   ]
 
-  aboutToAppear(): void {
-    emitter.on({ eventId: TELEPROMPTER_ADD_SUCCESS }, (eventData: emitter.EventData) => {
-      let target: TeleprompterEntity = eventData?.data?.Teleprompter;
-      Logger.debug(TAG, `收到回调 id=${target.id}, title=${target.title}, timestamp=${target.timestamp}`);
-      let filterResult = this.data.filter((item) => {
-        return item.timestamp === target.timestamp;
-      })
-      if (filterResult.length == 0) {
-        Logger.debug(TAG, '列表中没有匹配到数据')
-        this.data.push(target)
-      } else {
-        Logger.debug(TAG, '列表中匹配到数据')
-      }
+  private onTeleprompterEditDone = (eventData: emitter.EventData) => {
+    let target: TeleprompterEntity = eventData?.data?.Teleprompter;
+    Logger.debug(TAG, `收到回调 id=${target.id}, title=${target.title}, timestamp=${target.timestamp}`);
+    let filterResult = this.data.filter((item) => {
+      return item.timestamp === target.timestamp;
     })
+    if (filterResult.length == 0) {
+      Logger.debug(TAG, '列表中没有匹配到数据')
+      this.data.push(target)
+    } else {
+      Logger.debug(TAG, '列表中匹配到数据')
+      this.data = this.data.map(item => {
+        if (item != undefined && item.timestamp == target.timestamp) {
+          return target;
+        }
+        return item;
+      })
+    }
+  };
+
+  aboutToAppear(): void {
+    emitter.on({ eventId: TELEPROMPTER_EDIT_SUCCESS }, this.onTeleprompterEditDone)
     this.loadDataFromDB()
+  }
+
+  aboutToDisappear(): void {
+    emitter.off(TELEPROMPTER_EDIT_SUCCESS, this.onTeleprompterEditDone)
   }
 
   private loadDataFromDB() {
@@ -88,6 +100,30 @@ struct TeleprompterHomePage {
     }
   }
 
+  private deleteItem(item: TeleprompterEntity) {
+    Logger.info(TAG, `删除数据，id: ${item.id}, title: ${item.title}`)
+    databaseManager.deleteTeleprompter(item, () => {
+      this.data.splice(this.data.indexOf(item), 1);
+    })
+  }
+
+  @Builder
+  private itemDeleteBuilder(item: TeleprompterEntity) {
+    Text('删除')
+      .height('100%')
+      .textAlign(TextAlign.Center)
+      .fontColor(0xFFFFFF)
+      .fontSize('13fp')
+      .backgroundColor($r('sys.color.ohos_id_color_badge_red'))
+      .padding({
+        left: '18vp',
+        right: '18vp'
+      })
+      .onClick(() => {
+        this.deleteItem(item)
+      })
+  }
+
   build() {
     RelativeContainer() {
       // 使用自定义导航栏组件
@@ -121,7 +157,10 @@ struct TeleprompterHomePage {
               .onClick(() => {
                 router.pushUrl({ url: 'pages/TeleprompterDetailPage', params: item })
               })
-          }
+          }.swipeAction({
+            end: this.itemDeleteBuilder(item),
+            edgeEffect: SwipeEdgeEffect.Spring
+          })
         })
       }.alignRules({
         top: { anchor: 'filesLayout', align: VerticalAlign.Bottom },

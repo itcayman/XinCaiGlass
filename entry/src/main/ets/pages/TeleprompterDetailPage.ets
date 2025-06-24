@@ -8,7 +8,7 @@ import { TeleprompterEntity } from '../database/bean/TeleprompterEntity';
 import { TeleprompterLine } from '../viewmodel/TeleprompterLine';
 import { common } from '@kit.AbilityKit';
 import { PermissionUtil } from '../utils/PermissionUtil';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { Logger } from '../utils/Logger';
 import { JhProgressHUD } from '../utils/JhProgressHUD';
 import { DynamicIconButton } from '../view/DynamicIconButton';
@@ -19,6 +19,7 @@ import cmgClient from '../core/CMGClient';
 import systemDateTime from '@ohos.systemDateTime';
 import { DynamicArrayBuffer } from '../viewmodel/DynamicArrayBuffer';
 import { StringChecker } from '../utils/StringChecker';
+import { TELEPROMPTER_EDIT_SUCCESS } from '../constants/EventIds';
 
 // import router from '@ohos.router'
 const TAG: string = '[TeleprompterDetail]';
@@ -38,6 +39,9 @@ struct TeleprompterDetailPage {
   @State private btnDynamicScrollText: Resource = $r("app.string.teleprompter_dynamic_scroll")
   @State private btnSpeedScrollIcon: Resource = $r('app.media.ic_public_play_norm');
   @State private btnSpeedScrollText: Resource = $r("app.string.teleprompter_speed_scroll");
+  @State private title: string = ''
+  @State private timestamp: string = ''
+  @State private content: string = ''
   @State private maskLayerHeight: number = 500;
   /*************** 逻辑部分 ***************/
   //是否在自动滚动
@@ -46,10 +50,9 @@ struct TeleprompterDetailPage {
   private isDynamicScrolling = false
   private scrollerForScroll: Scroller = new Scroller()
   private contentController: TextController = new TextController();
-  @State navHeight: number = 0;
   @State teleprompterData: TeleprompterEntity = new TeleprompterEntity(0, '', '', 0)
   //当前显示页对应行的索引
-  @State private currentPageFirstLineIndex: number = 0
+  private currentPageFirstLineIndex: number = 0
   //当前正在朗读行的索引
   private currentReadLineIndex = 0
   private lastScrolledY = -1
@@ -96,9 +99,24 @@ struct TeleprompterDetailPage {
     this.afterGetTranscriptResult(result);
   };
 
+  private onTeleprompterEditDone = (eventData: emitter.EventData) => {
+    let target: TeleprompterEntity = eventData?.data?.Teleprompter;
+    Logger.debug(TAG, `收到回调 id=${target.id}, title=${target.title}, timestamp=${target.timestamp}`);
+    if (this.teleprompterData.timestamp == target.timestamp) {
+      this.teleprompterData = target;
+      this.title = this.teleprompterData.title;
+      this.timestamp = TimeUtil.formatTimestamp(this.teleprompterData.timestamp);
+      this.content = this.teleprompterData.content;
+    }
+  };
+
   aboutToAppear() {
+    this.observerTeleprompterEditDone();
     this.enterTimestamp = systemDateTime.getTime();
     this.teleprompterData = router.getParams() as TeleprompterEntity
+    this.title = this.teleprompterData.title;
+    this.timestamp = TimeUtil.formatTimestamp(this.teleprompterData.timestamp);
+    this.content = this.teleprompterData.content;
     Logger.log(TAG, this.teleprompterData.toString())
 
     font.registerFont({
@@ -113,6 +131,7 @@ struct TeleprompterDetailPage {
   }
 
   aboutToDisappear(): void {
+    emitter.off(TELEPROMPTER_EDIT_SUCCESS, this.onTeleprompterEditDone);
     this.stopSpeedScroll();
     cmgClient.commandM().removeRemoteControlCallback(this.remoteControlCallback);
     cmgClient.commandM().removeDoubleCallback(this.doubleClickCallback);
@@ -122,6 +141,10 @@ struct TeleprompterDetailPage {
     cmgClient.realtimeAsrM().setConnectSuccessCallback(undefined);
     this.stopSpeedScroll();
     this.stopDynamicScroll();
+  }
+
+  private observerTeleprompterEditDone() {
+    emitter.on({ eventId: TELEPROMPTER_EDIT_SUCCESS }, this.onTeleprompterEditDone)
   }
 
   private initRealtimeASR() {
@@ -279,7 +302,7 @@ struct TeleprompterDetailPage {
     Logger.info(TAG, `文本总行数: ${lineCount}`);
     for (let index = 0; index < lineCount; index++) {
       let metrics = layoutManager.getLineMetrics(index)
-      let text = this.teleprompterData.content.substring(metrics.startIndex, metrics.endIndex)
+      let text = this.content.substring(metrics.startIndex, metrics.endIndex)
       let line = new TeleprompterLine(index, metrics.height, metrics.startIndex, metrics.endIndex, text)
       this.contentLines.push(line)
       // Logger.log(TAG, 'line: ' + line.toString());
@@ -291,14 +314,14 @@ struct TeleprompterDetailPage {
     this.maskLayerHeight = px2vp(stackViewSize.height) - LINE_HEIGHT * LINES_PER_PAGE;
     let spaceLineCount = this.maskLayerHeight / LINE_HEIGHT;
     for (let i = 0; i < spaceLineCount; i++) {
-      this.teleprompterData.content = this.teleprompterData.content + '\n'
+      this.content = this.content + '\n'
     }
     Logger.warn(TAG, 'maskLayerHeight:' + this.maskLayerHeight)
   }
 
   private afterScroll() {
     let scrolledY = this.scrollerForScroll.currentOffset().yOffset;
-    if(this.lastScrolledY == scrolledY) {
+    if (this.lastScrolledY == scrolledY) {
       return;
     }
     this.lastScrolledY = scrolledY;
@@ -354,12 +377,12 @@ struct TeleprompterDetailPage {
       Column() {
         Column() {
           //标题
-          Text(this.teleprompterData.title)
+          Text(this.title)
             .fontColor('#8a8a8a')
             .fontSize(16)
             .alignSelf(ItemAlign.Start)
           //日期
-          Text(TimeUtil.formatTimestamp(this.teleprompterData.timestamp))
+          Text(this.timestamp)
             .fontColor('#c1c1c1')
             .fontSize(12)
             .height(20)
@@ -368,8 +391,7 @@ struct TeleprompterDetailPage {
         //内容区域
         Stack({ alignContent: Alignment.BottomStart }) {
           Scroll(this.scrollerForScroll) {
-            Text(this.teleprompterData.content, { controller: this.contentController })
-              .id('contentText')
+            Text(this.content, { controller: this.contentController })
               .fontColor('#343434')
               .fontSize(16)// .fontFamily('kaishu')
               .lineHeight(LINE_HEIGHT)
@@ -378,6 +400,13 @@ struct TeleprompterDetailPage {
               .onAreaChange(() => {
                 this.onTextAreaChanged();
               })
+              .gesture(LongPressGesture({ fingers: 1, repeat: false, duration: 500 }).onAction(() => {
+                this.stopSpeedScroll();
+                this.stopDynamicScroll();
+                router.pushUrl({
+                  url: 'pages/TeleprompterEditPage', params: this.teleprompterData
+                })
+              }))
           }
           .width('100%')
           .backgroundColor(Color.White)

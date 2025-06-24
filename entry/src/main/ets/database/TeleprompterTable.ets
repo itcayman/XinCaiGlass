@@ -23,23 +23,23 @@ export default class TeleprompterTable {
 
   delete(data: TeleprompterEntity, callback: Function) {
     let predicates = new relationalStore.RdbPredicates(TABLE_NAME);
-    predicates.equalTo('id', data.id);
+    predicates.equalTo('timestamp', data.timestamp);
     this.teleprompterTable.deleteData(predicates, callback);
   }
 
   update(data: TeleprompterEntity, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = this.generateBucket(data);
     let predicates = new relationalStore.RdbPredicates(TABLE_NAME);
-    predicates.equalTo('id', data.id);
+    predicates.equalTo('timestamp', data.timestamp);
     this.teleprompterTable.updateData(predicates, valueBucket, callback);
   }
 
   // 查(查询的字段，回调，是否查询全部)
-  query(id: number, callback: Function, isAll: boolean = true) {
+  query(timestamp: number, callback: Function, isAll: boolean = true) {
     let predicates = new relationalStore.RdbPredicates(TABLE_NAME);
-    // if (!isAll) {
-    //   predicates.equalTo('id', id);
-    // }
+    if (!isAll) {
+      predicates.equalTo('timestamp', timestamp);
+    }
     this.teleprompterTable.query(predicates, (resultSet: relationalStore.ResultSet) => {
       let count: number = resultSet.rowCount;
       if (count === 0 || typeof count === 'string') {
