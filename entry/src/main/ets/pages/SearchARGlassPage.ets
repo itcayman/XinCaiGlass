@@ -59,10 +59,10 @@ struct SearchARGlassPage {
 
   private onBLEDeviceConnecting() {
     emitter.on({ eventId: BLE_DEVICE_CONNECTING }, (eventData: emitter.EventData) => {
-      let deviceId: string = eventData?.data?.deviceId;
-      Logger.warn(TAG, '正在连接设备:' + deviceId);
+      let device: BleScanItem = eventData?.data?.device;
+      Logger.warn(TAG, '正在连接设备:' + device.deviceId);
       this.searchResult = this.searchResult.map(item => {
-        if (item != undefined && item.deviceId == deviceId) {
+        if (item != undefined && item.deviceId == device.deviceId) {
           return new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, false, true)
         }
         return item;
@@ -72,10 +72,10 @@ struct SearchARGlassPage {
 
   private onBLEDeviceConnected() {
     emitter.on({ eventId: BLE_DEVICE_CONNECTED }, (eventData: emitter.EventData) => {
-      let deviceId: string = eventData?.data?.deviceId;
-      Logger.error(TAG, '连接到设备:' + deviceId);
+      let device: BleScanItem = eventData?.data?.device;
+      Logger.error(TAG, '连接到设备:' + device.deviceId);
       this.searchResult = this.searchResult.map(item => {
-        if (item != undefined && item.deviceId == deviceId) {
+        if (item != undefined && item.deviceId == device.deviceId) {
           return new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, true, false)
         }
         return item;
@@ -91,7 +91,7 @@ struct SearchARGlassPage {
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
         .onClick(() => {
-          cmgClient.gattClientM().startConnect(item.deviceId)
+          cmgClient.gattClientM().startConnect(item)
         })
       Text(item.deviceId + ' ' + item.rssi)
         .margin({ left: 20 })
@@ -107,7 +107,7 @@ struct SearchARGlassPage {
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
         .onClick(() => {
-          cmgClient.gattClientM().startConnect(item.deviceId)
+          cmgClient.gattClientM().startConnect(item)
         })
       Text(item.deviceId + ' ' + item.rssi)
         .margin({ left: 20 })
@@ -123,7 +123,7 @@ struct SearchARGlassPage {
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
         .onClick(() => {
-          cmgClient.gattClientM().startConnect(item.deviceId)
+          cmgClient.gattClientM().startConnect(item)
         })
       Text(item.deviceId + ' ' + item.rssi)
         .margin({ left: 20 })

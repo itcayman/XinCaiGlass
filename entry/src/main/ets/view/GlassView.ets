@@ -18,12 +18,15 @@ export struct GlassView {
   aboutToAppear(): void {
     Logger.info(TAG, 'aboutToAppear');
     emitter.on({ eventId: BLE_DEVICE_DISCONNECT }, () => {
+      Logger.debug(TAG, '未连接')
       this.connectStateRes = $r('app.string.state_disconnect')
     })
     emitter.on({ eventId: BLE_DEVICE_CONNECTING }, () => {
+      Logger.debug(TAG, '连接中')
       this.connectStateRes = $r('app.string.state_connecting')
     })
     emitter.on({ eventId: BLE_DEVICE_CONNECTED }, () => {
+      Logger.debug(TAG, '已连接')
       this.connectStateRes = $r('app.string.state_connected')
     })
   }

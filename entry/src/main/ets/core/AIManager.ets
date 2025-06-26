@@ -41,6 +41,7 @@ export class AIManager {
 
     this.realtimeASR.addTranscriptionCallback((result) => {
       this.asrResult = result;
+      // this.askAI();
       Logger.info(TAG, `语音识别结果: ${result}`);
     })
     this.realtimeASR.setConnectSuccessCallback(() => {
@@ -60,20 +61,20 @@ export class AIManager {
       buffer.append(data);
       if (current - lastTime >= 500) {
         // Logger.info(TAG, `积累到100个包长度 ${buffer.length}，发送音频数据进行识别...`);
-        Logger.info(TAG, `发送长度 ${buffer.length}，发送音频数据进行识别...`);
+        // Logger.info(TAG, `发送长度 ${buffer.length}，发送音频数据进行识别...`);
         this.realtimeASR.sendAudioData(buffer.getBuffer());
         buffer = new DynamicArrayBuffer();
         lastTime = current;
       }
       this.pcm.writePCMData(data);
     }
-    // this.gattClient.addAudioCallback(this.audioCallback);
+    this.gattClient.addAudioCallback(this.audioCallback);
     this.command.enterAIPage();
-    // this.command.openMic();
-    setTimeout(()=>{
-      this.command.sendAIResponse('今天（2025 年 6 月 20 日）南昌天气阴，气温 26℃到 33℃，西南风 1 级，东南风 1 级，湿度 78%。这样的天气很适合进行一些室内活动或者在傍晚时分外出散步呢，希望你能享受这一天的时光～');
+    this.command.openMic();
+    // setTimeout(()=>{
+      // this.command.sendAIResponse('今天（2025 年 6 月 20 日）南昌天气阴，气温 26℃到 33℃，西南风 1 级，东南风 1 级，湿度 78%。这样的天气很适合进行一些室内活动或者在傍晚时分外出散步呢，希望你能享受这一天的时光～');
       // this.command.sendAIResponse('今天（2025 年 6 月 20 日）南昌天气阴，气温 26℃到 33℃，');
-    }, 2000);
+    // }, 2000);
   }
 
   private stopGlassAI() {

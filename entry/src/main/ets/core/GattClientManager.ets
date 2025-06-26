@@ -17,6 +17,7 @@ import { PCMManager } from './PCMManager';
 import { DynamicArrayBuffer } from '../viewmodel/DynamicArrayBuffer';
 import systemDateTime from '@ohos.systemDateTime';
 import { HexUtil } from '../utils/HexUtil';
+import { BleScanItem } from '../viewmodel/BleScanItem';
 
 
 const TAG: string = '[JVC]GattClientManager';
@@ -38,7 +39,7 @@ export class Notify {
 
 
 export class GattClientManager {
-  private device: string | undefined = undefined;
+  private device: BleScanItem | undefined = undefined;
   private gattClient: ble.GattClientDevice | undefined = undefined;
   private normalService: ble.GattService | undefined;
   private audioService: ble.GattService | undefined;
@@ -72,8 +73,8 @@ export class GattClientManager {
   }
 
   // 1. client端主动连接时调用
-  public startConnect(peerDevice: string) { // 对端设备一般通过ble scan获取到
-    if (this.connectState == constant.ProfileConnectionState.STATE_CONNECTED && this.device != peerDevice) {
+  public startConnect(peerDevice: BleScanItem) { // 对端设备一般通过ble scan获取到
+    if (this.connectState == constant.ProfileConnectionState.STATE_CONNECTED && this.device?.deviceId != peerDevice.deviceId) {
       // this.stopConnect();
       // this.startConnect(peerDevice);
     }
@@ -84,7 +85,7 @@ export class GattClientManager {
     Logger.info(TAG, `尝试连接设备【${peerDevice}】`);
     this.device = peerDevice;
     // 1.1 使用device构造gattClient，后续的交互都需要使用该实例
-    this.gattClient = ble.createGattClientDevice(peerDevice);
+    this.gattClient = ble.createGattClientDevice(peerDevice.deviceId);
     this.onGattClientStateChange(); // 1.2 订阅连接状态
     try {
       this.gattClient.connect(); // 1.3 发起连接
@@ -95,7 +96,7 @@ export class GattClientManager {
 
   public getConnectedDeviceId(): string | undefined {
     if (this.connectState == constant.ProfileConnectionState.STATE_CONNECTED) {
-      return this.device!;
+      return this.device!.deviceId;
     }
     return undefined;
   }
@@ -307,11 +308,11 @@ export class GattClientManager {
     }
     try {
       this.gattClient.on('BLEConnectionStateChange', (stateInfo: ble.BLEConnectionChangeState) => {
-        if (stateInfo.deviceId == this.device) {
+        if (stateInfo.deviceId == this.device?.deviceId) {
           this.connectState = stateInfo.state;
         }
         let state = '';
-        let eventData: emitter.EventData = { data: { 'deviceId': stateInfo.deviceId } }
+        let eventData: emitter.EventData = { data: { device: this.device} }
         switch (stateInfo.state) {
           case 0:
             state = 'DISCONNECTED';

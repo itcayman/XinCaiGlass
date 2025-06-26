@@ -16,7 +16,10 @@ import {
   BLE_DEVICE_DISCONNECTED as BLE_DEVICE_DISCONNECT
 } from "../constants/EventIds";
 import { TeleprompterConfig } from "../viewmodel/config/TeleprompterConfig";
+import { plainToInstance } from "class-transformer";
+import { Logger } from "../utils/Logger";
 
+const TAG = '[CMGClient]'
 const DEVICE_NAME_FILTER = 'CMG_Y01_0001'
 
 export class CMGClient {
@@ -33,8 +36,9 @@ export class CMGClient {
     this.localData.init(context);
     this.bluetooth.init();
 
-    this.initMac();
+    this.initDeviceAndAutoConnect();
     this.initSoftwareInfo();
+    this.initListeners();
   }
 
   public bluetoothM(): BluetoothManager {
@@ -75,26 +79,39 @@ export class CMGClient {
     this.bluetooth.startBLEScan();
   }
 
-  private initMac() {
-    this.glassDevice.mac = this.localData.getMac();
-    // 本地没有存设备信息，则需要本地自动连接最近的CMG设备
-    if (isBlank(this.glassDevice.mac)) {
-
+  private initDeviceAndAutoConnect() {
+    let jsonData = this.localData.getDeviceInfo()
+    let parseData = plainToInstance(CMGDeviceInfo, JSON.parse(jsonData))
+    if (!parseData) {
+      return
+    }
+    this.glassDevice = parseData
+    Logger.info(TAG, `眼镜设备信息: ${this.glassDevice.toString()}`)
+    if (this.glassDevice && !isBlank(this.glassDevice.deviceName) && !isBlank(this.glassDevice.deviceId)) {
+      let device = new BleScanItem(this.glassDevice.deviceId, 0, this.glassDevice.deviceName, false, false, false)
+      this.gattClient.startConnect(device)
     }
   }
 
   private initSoftwareInfo() {
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       this.glassDevice.softwareVersion = bundleInfo.versionName;
+      this.localData.updateDeviceInfo(this.glassDevice)
     })
   }
 
   private initListeners() {
-    emitter.on({ eventId: BLE_DEVICE_DISCONNECT }, () => {
+    emitter.on({ eventId: BLE_DEVICE_DISCONNECT }, (eventData: emitter.EventData) => {
     })
-    emitter.on({ eventId: BLE_DEVICE_CONNECTING }, () => {
+    emitter.on({ eventId: BLE_DEVICE_CONNECTING }, (eventData: emitter.EventData) => {
     })
-    emitter.on({ eventId: BLE_DEVICE_CONNECTED }, () => {
+    emitter.on({ eventId: BLE_DEVICE_CONNECTED }, (eventData: emitter.EventData) => {
+      let device: BleScanItem = eventData?.data?.device as BleScanItem;
+      if (this.glassDevice.deviceId != device.deviceId) {
+        this.glassDevice.deviceId = device.deviceId
+        this.glassDevice.deviceName = device.deviceName
+        this.localData.updateDeviceInfo(this.glassDevice)
+      }
     })
   }
 }
