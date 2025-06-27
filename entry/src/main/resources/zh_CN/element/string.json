@@ -81,6 +81,10 @@
       "value": "提词中接收消息通知提醒"
     },
     {
+      "name": "teleprompter_setting_mic_desc",
+      "value": "使用眼镜mic采集音源"
+    },
+    {
       "name": "meeting_assistant",
       "value": "会议助手"
     },
@@ -175,6 +179,10 @@
     {
       "name": "state_disconnect",
       "value": "未连接"
+    },
+    {
+      "name": "state_disconnect_toast",
+      "value": "与眼镜断开了连接!"
     }
   ]
 }

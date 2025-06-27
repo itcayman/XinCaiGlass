@@ -33,59 +33,59 @@ export class CMGClient {
   private ai: AIManager = new AIManager(this.command, this.realtimeASR, this.gattClient);
 
   init(context: Context) {
-    this.localData.init(context);
-    this.bluetooth.init();
+    this.localData.init(context)
+    this.bluetooth.init()
 
-    this.initDeviceAndAutoConnect();
-    this.initSoftwareInfo();
-    this.initListeners();
+    this.initDeviceAndAutoConnect()
+    this.initTeleprompterConfig()
+    this.initSoftwareInfo()
+    this.initListeners()
   }
 
   public bluetoothM(): BluetoothManager {
-    return this.bluetooth;
+    return this.bluetooth
   }
 
   public realtimeAsrM(): RealtimeAsrManager {
-    return this.realtimeASR;
+    return this.realtimeASR
   }
 
   public commandM(): CommandManager {
-    return this.command;
+    return this.command
   }
 
   public aiM(): AIManager {
-    return this.ai;
+    return this.ai
   }
 
   public gattClientM(): GattClientManager {
-    return this.gattClient;
+    return this.gattClient
   }
 
   public teleprompterC(): TeleprompterConfig {
-    return this.teleprompterConfig;
+    return this.teleprompterConfig
   }
 
-  public updateTeleprompterConfig(config: TeleprompterConfig) {
-    this.teleprompterConfig = config;
+  public updateTeleprompterConfig() {
+    this.localData.updateTeleprompterConfig(this.teleprompterConfig)
   }
 
   public findDevice() {
     emitter.on({ eventId: BLE_SCAN_ID }, (eventData: emitter.EventData) => {
-      let findDevice: BleScanItem = eventData?.data?.BleScanItem;
+      let findDevice: BleScanItem = eventData?.data?.BleScanItem
       if (findDevice.deviceName.startsWith(DEVICE_NAME_FILTER)) {
 
       }
     })
-    this.bluetooth.startBLEScan();
+    this.bluetooth.startBLEScan()
   }
 
   private initDeviceAndAutoConnect() {
-    let jsonData = this.localData.getDeviceInfo()
-    let parseData = plainToInstance(CMGDeviceInfo, JSON.parse(jsonData))
-    if (!parseData) {
+    let localData = this.localData.getDeviceInfo()
+    if (!localData) {
       return
     }
-    this.glassDevice = parseData
+    this.glassDevice = localData
     Logger.info(TAG, `眼镜设备信息: ${this.glassDevice.toString()}`)
     if (this.glassDevice && !isBlank(this.glassDevice.deviceName) && !isBlank(this.glassDevice.deviceId)) {
       let device = new BleScanItem(this.glassDevice.deviceId, 0, this.glassDevice.deviceName, false, false, false)
@@ -93,9 +93,17 @@ export class CMGClient {
     }
   }
 
+  private initTeleprompterConfig() {
+    let localData = this.localData.getTeleprompterConfig()
+    if (!localData) {
+      return
+    }
+    this.teleprompterConfig = localData
+  }
+
   private initSoftwareInfo() {
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
-      this.glassDevice.softwareVersion = bundleInfo.versionName;
+      this.glassDevice.softwareVersion = bundleInfo.versionName
       this.localData.updateDeviceInfo(this.glassDevice)
     })
   }
@@ -110,6 +118,7 @@ export class CMGClient {
       if (this.glassDevice.deviceId != device.deviceId) {
         this.glassDevice.deviceId = device.deviceId
         this.glassDevice.deviceName = device.deviceName
+        Logger.warn(TAG, `更新眼镜设备信息: ${this.glassDevice.toString()}`)
         this.localData.updateDeviceInfo(this.glassDevice)
       }
     })

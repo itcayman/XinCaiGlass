@@ -17,16 +17,49 @@ struct SearchARGlassPage {
   @State title: string = 'Search AR Glass';
   @State searchResult: Array<BleScanItem> = new Array
 
+  private onScanResult = (eventData: emitter.EventData) => {
+    let data = eventData.data?.BleScanItem as BleScanItem;
+    if (data.deviceName.indexOf('AR_NANCHANG') >= 0 || data.deviceName.indexOf('CMG') >= 0) {
+      if (cmgClient.gattClientM().getConnectedDeviceId() == data.deviceId) {
+        Logger.info(TAG, `设备【${data.deviceId} 已连接】`);
+        data.connected = true;
+      }
+      this.searchResult.push(data)
+    }
+  }
+
+  private onConnecting = (eventData: emitter.EventData) => {
+    let device: BleScanItem = eventData?.data?.device;
+    Logger.warn(TAG, '正在连接设备:' + device.deviceId);
+    this.searchResult = this.searchResult.map(item => {
+      if (item != undefined && item.deviceId == device.deviceId) {
+        return new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, false, true)
+      }
+      return item;
+    })
+  }
+
+  private onConnected = (eventData: emitter.EventData) => {
+    let device: BleScanItem = eventData?.data?.device;
+    Logger.error(TAG, '连接到设备:' + device.deviceId);
+    this.searchResult = this.searchResult.map(item => {
+      if (item != undefined && item.deviceId == device.deviceId) {
+        return new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, true, false)
+      }
+      return item;
+    })
+  }
+
   aboutToAppear(): void {
-    this.onScanDevice();
-    this.onBLEDeviceConnecting();
+    this.onScanDevice()
+    this.onBLEDeviceConnecting()
     this.onBLEDeviceConnected()
   }
 
   aboutToDisappear(): void {
-    emitter.off(BLE_SCAN_ID);
-    emitter.off(BLE_DEVICE_CONNECTING);
-    emitter.off(BLE_DEVICE_CONNECTED);
+    emitter.off(BLE_SCAN_ID, this.onScanResult)
+    emitter.off(BLE_DEVICE_CONNECTING, this.onConnecting)
+    emitter.off(BLE_DEVICE_CONNECTED, this.onConnected)
     bleScanManager.stopScan()
   }
 
@@ -37,7 +70,7 @@ struct SearchARGlassPage {
       .then((result) => {
         bleScanManager.stopScan()
         bleScanManager.startScan()
-        Logger.info(TAG, '开始扫描BLE设备...');
+        Logger.info(TAG, '开始扫描BLE设备...')
       })
       .catch((error: BusinessError) => {
         Logger.error(TAG, '扫描BLE发生错误: ' + JSON.stringify(error))
@@ -45,42 +78,15 @@ struct SearchARGlassPage {
   }
 
   private onScanDevice() {
-    emitter.on({ eventId: BLE_SCAN_ID }, (eventData: emitter.EventData) => {
-      let data = eventData.data?.BleScanItem as BleScanItem;
-      if (data.deviceName.indexOf('AR_NANCHANG') >= 0 || data.deviceName.indexOf('CMG') >= 0) {
-        if (cmgClient.gattClientM().getConnectedDeviceId() == data.deviceId) {
-          Logger.info(TAG, `设备【${data.deviceId} 已连接】`);
-          data.connected = true;
-        }
-        this.searchResult.push(data)
-      }
-    });
+    emitter.on({ eventId: BLE_SCAN_ID }, this.onScanResult)
   }
 
   private onBLEDeviceConnecting() {
-    emitter.on({ eventId: BLE_DEVICE_CONNECTING }, (eventData: emitter.EventData) => {
-      let device: BleScanItem = eventData?.data?.device;
-      Logger.warn(TAG, '正在连接设备:' + device.deviceId);
-      this.searchResult = this.searchResult.map(item => {
-        if (item != undefined && item.deviceId == device.deviceId) {
-          return new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, false, true)
-        }
-        return item;
-      })
-    })
+    emitter.on({ eventId: BLE_DEVICE_CONNECTING }, this.onConnecting)
   }
 
   private onBLEDeviceConnected() {
-    emitter.on({ eventId: BLE_DEVICE_CONNECTED }, (eventData: emitter.EventData) => {
-      let device: BleScanItem = eventData?.data?.device;
-      Logger.error(TAG, '连接到设备:' + device.deviceId);
-      this.searchResult = this.searchResult.map(item => {
-        if (item != undefined && item.deviceId == device.deviceId) {
-          return new BleScanItem(item.deviceId, item.rssi, item.deviceName, item.connectable, true, false)
-        }
-        return item;
-      })
-    })
+    emitter.on({ eventId: BLE_DEVICE_CONNECTED }, this.onConnected)
   }
 
   @Builder

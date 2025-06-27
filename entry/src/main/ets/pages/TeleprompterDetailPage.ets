@@ -19,7 +19,7 @@ import cmgClient from '../core/CMGClient';
 import systemDateTime from '@ohos.systemDateTime';
 import { DynamicArrayBuffer } from '../viewmodel/DynamicArrayBuffer';
 import { StringChecker } from '../utils/StringChecker';
-import { TELEPROMPTER_EDIT_SUCCESS } from '../constants/EventIds';
+import { BLE_DEVICE_DISCONNECTED, TELEPROMPTER_EDIT_SUCCESS } from '../constants/EventIds';
 
 // import router from '@ohos.router'
 const TAG: string = '[TeleprompterDetail]';
@@ -109,8 +109,13 @@ struct TeleprompterDetailPage {
     }
   };
 
+  private onDisconnected = () => {
+    JhProgressHUD.showToast($r('app.string.state_disconnect_toast'))
+  }
+
   aboutToAppear() {
     this.observerTeleprompterEditDone();
+    emitter.on({ eventId: BLE_DEVICE_DISCONNECTED }, this.onDisconnected)
     this.enterTimestamp = systemDateTime.getTime();
     this.teleprompterData = router.getParams() as TeleprompterEntity
     this.title = this.teleprompterData.title;
@@ -131,12 +136,12 @@ struct TeleprompterDetailPage {
 
   aboutToDisappear(): void {
     emitter.off(TELEPROMPTER_EDIT_SUCCESS, this.onTeleprompterEditDone);
+    emitter.off(BLE_DEVICE_DISCONNECTED, this.onDisconnected)
     this.stopSpeedScroll();
     cmgClient.commandM().removeRemoteControlCallback(this.remoteControlCallback);
     cmgClient.commandM().removeDoubleCallback(this.doubleClickCallback);
     cmgClient.commandM().enterHomePage();
-    // cmgClient.gattClientM().clearWaitingSendQueue();
-    // cmgClient.realtimeAsrM().stopAudioCapture();
+    cmgClient.realtimeAsrM().stopAudioCapture();
     cmgClient.realtimeAsrM().setConnectSuccessCallback(undefined);
     this.stopSpeedScroll();
     this.stopDynamicScroll();
@@ -149,8 +154,11 @@ struct TeleprompterDetailPage {
   private initRealtimeASR() {
     JhProgressHUD.showLoadingText('加载中...')
     cmgClient.realtimeAsrM().setConnectSuccessCallback(() => {
-      // cmgClient.realtimeAsrM().startAudioCapture();
-      this._initGlassMic();
+      if (cmgClient.teleprompterC().useMicForGlass) {
+        this._initGlassMic();
+      } else {
+        cmgClient.realtimeAsrM().startAudioCapture();
+      }
       JhProgressHUD.hide();
     })
     cmgClient.realtimeAsrM().addTranscriptionCallback(this.transcriptionCallback);
@@ -266,7 +274,15 @@ struct TeleprompterDetailPage {
     let sendText = '';
     let targetIndex = LINES_PER_PAGE + this.currentPageFirstLineIndex;
     for (let i = this.currentPageFirstLineIndex; i < targetIndex && i < this.contentLines.length; i++) {
-      sendText += this.contentLines[i].text + '\n'
+      let text = this.contentLines[i].text
+      text = text.replaceAll('“', '"')
+      text = text.replaceAll('”', '"')
+      text = text.replaceAll('，', ', ')
+      text = text.replaceAll('！', '! ')
+      text = text.replaceAll('：', ': ')
+      text = text.replaceAll('；', '; ')
+      text = text.replaceAll('？', '? ')
+      sendText += text.endsWith('\n') ? text : (text + '\n')
     }
     cmgClient.commandM().scrollTeleprompterText(sendText)
   }
@@ -327,7 +343,7 @@ struct TeleprompterDetailPage {
       return;
     }
     this.lastScrolledY = scrolledY;
-    if (scrolledY % LINE_HEIGHT == 0) {
+    if (scrolledY != 0 && scrolledY % LINE_HEIGHT == 0) {
       return;
     }
     let targetLineNum = Math.floor(scrolledY / LINE_HEIGHT);
@@ -402,7 +418,7 @@ struct TeleprompterDetailPage {
               .fontColor('#343434')
               .fontSize(16)// .fontFamily('kaishu')
               .lineHeight(LINE_HEIGHT)
-              .padding({ left: 15, right: 15 })
+              .padding({ left: 25, right: 25 })
               .width('100%')
               .onAreaChange(() => {
                 this.onTextAreaChanged();

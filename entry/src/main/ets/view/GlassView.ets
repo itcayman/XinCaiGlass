@@ -33,9 +33,6 @@ export struct GlassView {
 
   aboutToDisappear(): void {
     Logger.info(TAG, 'aboutToDisappear');
-    emitter.off(BLE_DEVICE_DISCONNECT);
-    emitter.off(BLE_DEVICE_CONNECTING);
-    emitter.off(BLE_DEVICE_CONNECTED);
   }
 
   build() {

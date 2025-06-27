@@ -33,6 +33,9 @@ export class PCMManager {
   }
 
   public done() {
+    if (this.file == undefined) {
+      return;
+    }
     Logger.error(TAG, `完成pcm数据写入}`)
     try {
       fs.closeSync(this.file?.fd);

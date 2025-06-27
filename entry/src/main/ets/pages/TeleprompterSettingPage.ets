@@ -10,8 +10,8 @@ const TAG = '[提词器设置]'
 @Entry
 @Component
 struct TeleprompterSettingPage {
-  private config: TeleprompterConfig = new TeleprompterConfig()
   @State receiveMessageOn: boolean = false
+  @State useMicForGlassOn: boolean = true
   @State private speedData: Array<TeleprompterSpeed> = [
     new TeleprompterSpeed(20, $r('app.string.teleprompter_setting_speed1')),
     new TeleprompterSpeed(15, $r('app.string.teleprompter_setting_speed2')),
@@ -19,11 +19,19 @@ struct TeleprompterSettingPage {
   ]
 
   aboutToAppear(): void {
-    this.config = cmgClient.teleprompterC()
     this.speedData = this.speedData.map(target => {
       target.selected = target.scrollOnePageTime == cmgClient.teleprompterC().scrollOnePageSeconds
       return target;
     })
+  }
+
+  private onReceiverMsgChange = (isOn: boolean) => {
+    cmgClient.teleprompterC().receiveMessage = isOn
+    cmgClient.updateTeleprompterConfig()
+  }
+  private onMicChange = (isOn: boolean) => {
+    cmgClient.teleprompterC().useMicForGlass = isOn
+    cmgClient.updateTeleprompterConfig()
   }
 
   @Builder
@@ -38,8 +46,8 @@ struct TeleprompterSettingPage {
                 item.scrollOnePageTime == target.scrollOnePageTime);
             })
           }
-          this.config.scrollOnePageSeconds = item.scrollOnePageTime;
-          cmgClient.updateTeleprompterConfig(this.config)
+          cmgClient.teleprompterC().scrollOnePageSeconds = item.scrollOnePageTime;
+          cmgClient.updateTeleprompterConfig()
         })
         .select(item.selected)
         .width(25)
@@ -79,9 +87,26 @@ struct TeleprompterSettingPage {
         Text($r('app.string.teleprompter_setting_message_desc')).layoutWeight(1)
         Toggle({ type: ToggleType.Switch, isOn: this.receiveMessageOn })
           .margin({ left: '15vp' })
+          .onChange(this.onReceiverMsgChange)
       }
+      .id('receiverMsgToggleLayout')
       .alignRules({
         top: { anchor: 'speedLayout', align: VerticalAlign.Bottom },
+      })
+      .margin({ left: 15, top: 10, right: 15 })
+      .padding(15)
+      .borderRadius(ResourceUtil.getCommonBorderRadius())
+      .backgroundColor(Color.White)
+
+      Row() {
+        Text($r('app.string.teleprompter_setting_mic_desc')).layoutWeight(1)
+        Toggle({ type: ToggleType.Switch, isOn: this.useMicForGlassOn })
+          .margin({ left: '15vp' })
+          .onChange(this.onMicChange)
+      }
+      .id('micToggleLayout')
+      .alignRules({
+        top: { anchor: 'receiverMsgToggleLayout', align: VerticalAlign.Bottom },
       })
       .margin({ left: 15, top: 10, right: 15 })
       .padding(15)

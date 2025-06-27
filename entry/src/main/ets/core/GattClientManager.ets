@@ -20,7 +20,7 @@ import { HexUtil } from '../utils/HexUtil';
 import { BleScanItem } from '../viewmodel/BleScanItem';
 
 
-const TAG: string = '[JVC]GattClientManager';
+const TAG: string = '[GattClientManager]';
 const MTU_SIZE: number = 517;
 const MAX_RETRY = 5;
 
@@ -303,7 +303,7 @@ export class GattClientManager {
   // 2. 订阅连接状态变化事件
   private onGattClientStateChange() {
     if (!this.gattClient) {
-      console.error(TAG, 'no gattClient');
+      Logger.error(TAG, 'no gattClient');
       return;
     }
     try {
@@ -327,7 +327,7 @@ export class GattClientManager {
             state = 'CONNECTED';
             this.onGattClientMtuChange();
             this.onCharacteristicChanged()
-            console.info(TAG, '更新MTU size为:' + MTU_SIZE);
+            Logger.info(TAG, '更新MTU size为:' + MTU_SIZE);
             this.gattClient?.setBLEMtuSize(MTU_SIZE);
             emitter.emit({ eventId: BLE_DEVICE_CONNECTED, priority: emitter.EventPriority.HIGH }, eventData)
             break;
@@ -340,7 +340,7 @@ export class GattClientManager {
             emitter.emit({ eventId: BLE_DEVICE_UNDEFINED, priority: emitter.EventPriority.HIGH }, eventData)
             break;
         }
-        console.info(TAG, '设备deviceId=' + stateInfo.deviceId + ', 连接状态=' + state);
+        Logger.info(TAG, '设备deviceId=' + stateInfo.deviceId + ', 连接状态=' + state);
       });
     } catch (err) {
       this.printErr('BLEConnectionStateChange报错', err as BusinessError);
@@ -352,11 +352,11 @@ export class GattClientManager {
    * */
   private onGattClientMtuChange() {
     if (!this.gattClient) {
-      console.error(TAG, 'no gattClient');
+      Logger.error(TAG, 'no gattClient');
       return;
     }
     this.gattClient?.on('BLEMtuChange', (state: number) => {
-      console.info(TAG, '收到BLEMtuChange回调 state:' + state);
+      Logger.info(TAG, '收到BLEMtuChange回调 state:' + state);
       // if (state == 0) {
       this.discoverServices()
       // }
@@ -365,7 +365,7 @@ export class GattClientManager {
 
   private onCharacteristicChanged() {
     if (!this.gattClient) {
-      console.error(TAG, 'no gattClient');
+      Logger.error(TAG, 'no gattClient');
       return;
     }
     this.gattClient?.on('BLECharacteristicChange', (characteristic: ble.BLECharacteristic) => {
@@ -391,17 +391,17 @@ export class GattClientManager {
   // 3. client端连接成功后，需要进行服务发现
   private discoverServices() {
     if (!this.gattClient) {
-      console.info(TAG, 'no gattClient');
+      Logger.info(TAG, 'no gattClient');
       return;
     }
-    console.info(TAG, '开始扫描BLE服务...');
+    Logger.info(TAG, '开始扫描BLE服务...');
     try {
       this.gattClient.getServices().then((services: Array<ble.GattService>) => {
         // console.info(TAG, 'getServices success: ' + JSON.stringify(result));
         this.checkService(services);
         this.checkCharacteristics();
         this.checkDescriptors();
-        console.info(TAG, '校验结果: ' + this.found);
+        Logger.info(TAG, '校验结果: ' + this.found);
         this.enableNotifyReceivers();
       });
     } catch (err) {
